@@ -28,7 +28,7 @@ class AbstractConnector:
             name: Optional human readable name for the connector object
         """
 
-        self.name = name
+        self.name = str(id(self)) if name is None else name
         self._node: Optional[AbstractNode] = None  # The node that this connector is assigned to
         self._connected_partners = ObjectCollection()  # Tracks other connectors that are connected to this instance
 

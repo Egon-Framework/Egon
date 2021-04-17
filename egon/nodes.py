@@ -35,22 +35,29 @@ def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractCon
 class AbstractNode(abc.ABC):
     """Base class for constructing pipeline nodes"""
 
-    def __init__(self, num_processes=1) -> None:
+    def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
         if num_processes < 0:
             raise ValueError(f'Cannot instantiate a negative number of forked processes (got {num_processes}).')
 
-        # Note that we use the memory address and not the ``pid`` attribute.
-        # ``pid`` is only set after the process is started
+        # Note that we use the memory address of the processes and not the
+        # ``pid`` attribute. ``pid`` is only set after the process is started.
         self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
         self._states = mp.Manager().dict({id(p): False for p in self._processes})
+        self.name = str(id(self)) if name is None else name
 
         self._current_process_state = False
         for connection in self.get_connectors():
             connection._node = self
 
     def get_connectors(self) -> List[connectors.AbstractConnector]:
+        """Return a list of all connectors associated with the node
+
+        Returns:
+            A list of Inout and Output connectors
+        """
+
         return self._get_attrs(connectors.AbstractConnector)
 
     @property
@@ -60,7 +67,7 @@ class AbstractNode(abc.ABC):
         return len(self._processes)
 
     @num_processes.setter
-    def num_processes(self, num_processes) -> None:
+    def num_processes(self, num_processes: int) -> None:
         """The number of processes assigned to the current node"""
 
         if num_processes < 0:
