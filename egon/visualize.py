@@ -1,4 +1,4 @@
-"""Launches a Dash app for visualizing the status of a pipeline"""
+"""Launches a web app for visualizing the status of a pipeline"""
 
 from pathlib import Path
 from typing import List
@@ -10,10 +10,10 @@ import dash_cytoscape as cyto
 import dash_html_components as dhtml
 import yaml
 
-from egon.nodes import AbstractNode, Source, Target
+from egon.nodes import AbstractNode, Node, Source
 from egon.pipeline import Pipeline
 
-DEFAULT_LAYOUT = 'breadthfirst'
+DEFAULT_LAYOUT = 'grid'
 STYLE_PATH = Path(__file__).resolve().parent / 'default_style.yml'
 
 
@@ -85,13 +85,13 @@ class PipelineCytoscape(cyto.Cytoscape):
             The CSS class of the node
         """
 
+        if isinstance(node, Node):
+            return 'default_node'
+
         if isinstance(node, Source):
             return 'source_node'
 
-        if isinstance(node, Target):
-            return 'target_node'
-
-        return 'default_node'
+        return 'target_node'
 
 
 class Visualizer(dash.Dash):
@@ -118,9 +118,19 @@ class Visualizer(dash.Dash):
             An HTML component
         """
 
-        cytoscape = PipelineCytoscape(pipeline, id='pipeline-cyto')
         update_interval_ms = update_interval * 1000  # The interval in milliseconds
+
+        cytoscape = PipelineCytoscape(pipeline, id='pipeline-cyto')
         interval = dcc.Interval(id="interval", interval=update_interval_ms)
+        dropdown = dcc.Dropdown(
+            id='dropdown-layout',
+            value=DEFAULT_LAYOUT,
+            clearable=False,
+            options=[
+                {'label': name.capitalize(), 'value': name}
+                for name in ['grid', 'breadthfirst', 'circle']
+            ]
+        )
 
         @self.callback(ddep.Output('pipeline-cyto', 'stylesheet'), ddep.Input('interval', 'n_intervals'))
         def update_cytoscape_node_colors(*args) -> List[dict]:
@@ -131,8 +141,13 @@ class Visualizer(dash.Dash):
 
             return style
 
+        @self.callback(ddep.Output('pipeline-cyto', 'layout'), ddep.Input('dropdown-layout', 'value'))
+        def update_layout(layout):
+            return {'name': layout, 'animate': True}
+
         return dhtml.Div([
             dhtml.H1('Pipeline Overview', id='overview-header'),
+            dropdown,
             cytoscape,
             interval,
         ], id='overview-section')
