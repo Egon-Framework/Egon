@@ -45,7 +45,7 @@ class AbstractNode(abc.ABC):
         # ``pid`` attribute. ``pid`` is only set after the process is started.
         self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
         self._states = mp.Manager().dict({id(p): False for p in self._processes})
-        self.name = str(id(self)) if name is None else name
+        self.name = self.__class__.__name__
 
         self._current_process_state = False
         for connection in self.get_connectors():
