@@ -14,7 +14,8 @@ from egon.nodes import AbstractNode, Node, Source
 from egon.pipeline import Pipeline
 
 DEFAULT_LAYOUT = 'grid'
-STYLE_PATH = Path(__file__).resolve().parent / 'default_style.yml'
+STYLE_PATH = Path(__file__).resolve().parent / 'assets' / 'default_style.yml'
+DOC_URL = 'https://mwvgroup.github.io/Egon/'
 
 
 class PipelineCytoscape(cyto.Cytoscape):
@@ -119,18 +120,7 @@ class Visualizer(dash.Dash):
         """
 
         update_interval_ms = update_interval * 1000  # The interval in milliseconds
-
         cytoscape = PipelineCytoscape(pipeline, id='pipeline-cyto')
-        interval = dcc.Interval(id="interval", interval=update_interval_ms)
-        dropdown = dcc.Dropdown(
-            id='dropdown-layout',
-            value=DEFAULT_LAYOUT,
-            clearable=False,
-            options=[
-                {'label': name.capitalize(), 'value': name}
-                for name in ['grid', 'breadthfirst', 'circle']
-            ]
-        )
 
         @self.callback(ddep.Output('pipeline-cyto', 'stylesheet'), ddep.Input('interval', 'n_intervals'))
         def update_cytoscape_node_colors(*args) -> List[dict]:
@@ -145,9 +135,64 @@ class Visualizer(dash.Dash):
         def update_layout(layout):
             return {'name': layout, 'animate': True}
 
-        return dhtml.Div([
-            dhtml.H1('Pipeline Overview', id='overview-header'),
-            dropdown,
-            cytoscape,
-            interval,
-        ], id='overview-section')
+        return dhtml.Div(
+            className="row",
+            children=[
+                dhtml.Div(  # Left Panel Div
+                    className="three columns div-left-panel",
+                    children=[
+                        dhtml.Div(  # Div for application info
+                            className="div-info",
+                            children=[
+                                dhtml.A(
+                                    target=DOC_URL,
+                                    children=[
+                                        dhtml.Img(className="logo", src=self.get_asset_url('logo.svg')),
+                                        dhtml.Span(children=['Egon'], className='logo-text')
+                                    ],
+                                    className='display-inline'
+                                ),
+                                dcc.Markdown(
+                                    'This interface provides a general overview of the current pipeline status. '
+                                    'Please consult with a system administrator before running on a cluster enviornment. '
+                                    f'For more information see the [official documentation]({DOC_URL}).'
+                                ),
+                                dhtml.H4('Pipeline Summary'),
+                                dhtml.Button('Run Pipeline', id='run-button')
+                            ],
+                        ),
+                    ],
+                ),
+
+                # Right Panel Div
+                dhtml.Div(
+                    className="nine columns div-right-panel",
+                    children=[
+                        dcc.Dropdown(
+                            id='dropdown-layout',
+                            value=DEFAULT_LAYOUT,
+                            clearable=False,
+                            options=[
+                                {'label': name.capitalize(), 'value': name}
+                                for name in ['grid', 'breadthfirst', 'circle']
+                            ],
+                            className='float-right'
+                        ),
+                        cytoscape,
+                        dhtml.Div(
+                            className="pipeline-load",
+                            children=[
+                                dhtml.H2('Pipeline Load')
+                            ]
+                        ),
+                        dhtml.Div(
+                            className="system-load",
+                            children=[
+                                dhtml.H2('System Load')
+                            ]
+                        )
+                    ],
+                ),
+                dcc.Interval(id="interval", interval=update_interval_ms)
+            ],
+        )
