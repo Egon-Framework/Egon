@@ -157,8 +157,19 @@ class Visualizer(dash.Dash):
                                     'Please consult with a system administrator before running on a cluster enviornment. '
                                     f'For more information see the [official documentation]({DOC_URL}).'
                                 ),
-                                dhtml.H4('Pipeline Summary'),
-                                dhtml.Button('Run Pipeline', id='run-button')
+                                dhtml.H6('Pipeline Summary'),
+                                dhtml.Div(
+                                    className="div-infotable",
+                                    children=[
+                                        dhtml.Table(children=[
+                                            dhtml.Tr(children=[ dhtml.Td(children=['Input Nodes']), dhtml.Td(children=['test1'])]),
+                                            dhtml.Tr(children=[dhtml.Td(children=['Inline Nodes']), dhtml.Td(children=['test2'])                                    ]),
+                                            dhtml.Tr(children=[dhtml.Td(children=['Target Nodes']), dhtml.Td(children=['test3'])]),
+                                            dhtml.Tr(children=[dhtml.Td(children=['Total Nodes']), dhtml.Td(children=['test4'])]),
+                                            dhtml.Tr(children=[dhtml.Td(children=['Connectors']), dhtml.Td(children=['test5'])])
+                                        ])
+                                ]),
+                                dhtml.Div(className="div-runbutton", children=[dhtml.Button('Run Pipeline', id='run-button')])
                             ],
                         ),
                     ],
