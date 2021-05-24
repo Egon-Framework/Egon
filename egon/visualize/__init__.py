@@ -45,6 +45,10 @@ class Visualizer(dash.Dash):
         # )(callbacks.update_cytoscape_node_colors)
 
         self.callback(
+            ddep.Output('graph-queue-size', 'extendData'), ddep.Input('pipeline-cyto', 'input_nodes'), ddep.Input('interval', 'n_intervals')
+        )(callbacks.get_queue_sizes)
+
+        self.callback(
             ddep.Output('graph-cpu-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
         )(callbacks.get_cpu_usage)
 
@@ -52,7 +56,7 @@ class Visualizer(dash.Dash):
             ddep.Output('graph-mem-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
         )(callbacks.get_memory_usage)
 
-    def _build_html(self, pipeline: Pipeline, update_interval: int = 1) -> dhtml.Div:
+    def _build_html(self, pipeline: Pipeline, update_interval: int = 100) -> dhtml.Div:
         """Create the HTML content to be displayed by the app
 
         Args:
@@ -89,10 +93,6 @@ class Visualizer(dash.Dash):
                 options=[{'label': name.title(), 'value': name} for name in ['grid', 'breadthfirst', 'circle']]
             )
 
-        queue_data = {'Time': [0, 1], 'Queue Size': [0, 1], 'Node Name': [0, 1]}
-        queue_fig = px.area(queue_data, x='Time', y='Queue Size')
-        queue_graph = dcc.Graph(id='queue_size_plot', figure=queue_fig)
-
         right_column = \
             dhtml.Div(className='nine columns div-right-panel', children=[
                 dropdown_layout_selector,
@@ -101,7 +101,7 @@ class Visualizer(dash.Dash):
                 dhtml.Div(
                     className='div-pipeline-load',
                     children=[
-                        queue_graph
+                        ecomp.graphs.PipelineQueueSize(pipeline, id='graph-queue-size')
                     ]),
                 dhtml.H4('System Load'),
                 dhtml.Div(

@@ -3,9 +3,8 @@
 from time import sleep
 from unittest import TestCase
 
-from egon.connectors import Output
-from egon.exceptions import OrphanedNodeError, MissingConnectionError
-from egon.mock import MockSource, MockPipeline
+from egon.exceptions import MissingConnectionError, OrphanedNodeError
+from egon.mock import MockPipeline, MockSource
 from egon.nodes import Node
 from egon.pipeline import Pipeline
 
@@ -82,5 +81,5 @@ class NodeDiscovery(TestCase):
     def runTest(self) -> None:
         pipeline = MockPipeline()
         expected_nodes = [pipeline.root, pipeline.leaf]
-        recovered_nodes = pipeline.get_nodes()
+        recovered_nodes = pipeline.node_list
         self.assertCountEqual(expected_nodes, recovered_nodes)

@@ -24,13 +24,36 @@ class SummaryTable(dhtml.Div):
     """Summary table for pipeline metrics"""
 
     def __init__(self, pipeline) -> None:
+        inputs, outputs = pipeline.connectors
+        number_inputs = len(inputs)
+        number_outputs = len(outputs)
+        total_connectors = number_inputs + number_outputs
+        number_nodes = len(pipeline.node_list)
+
         super().__init__(className='div-infotable', children=[
-            dhtml.Table(id='table-pipeline-summary', children=[
-                dhtml.Tr(children=[dhtml.Td(children=['Input Nodes']), dhtml.Td(children=['test1'])]),
-                dhtml.Tr(children=[dhtml.Td(children=['Inline Nodes']), dhtml.Td(children=['test2'])]),
-                dhtml.Tr(children=[dhtml.Td(children=['Target Nodes']), dhtml.Td(children=['test3'])]),
-                dhtml.Tr(children=[dhtml.Td(children=['Total Nodes']), dhtml.Td(children=['test4'])]),
-                dhtml.Tr(children=[dhtml.Td(children=['Connectors']), dhtml.Td(children=['test5'])])
+            dhtml.Table(id='table-infotable', children=[
+                dhtml.Tr(className='tr-property', children=[
+                    dhtml.Td(className='td-property-name', children=['Total Nodes']),
+                    dhtml.Td(className='td-property-value', children=[f'{number_nodes}'])]),
+                dhtml.Tr(className='tr-sub-property', children=[
+                    dhtml.Td(className='td-sub-property-name', children=['Source']),
+                    dhtml.Td(className='td-sub-property-value', children=['test1'])]),
+                dhtml.Tr(className='tr-sub-property', children=[
+                    dhtml.Td(className='td-sub-property-name', children=['Inline']),
+                    dhtml.Td(className='td-sub-property-value', children=['test2'])]),
+                dhtml.Tr(className='tr-sub-property', children=[
+                    dhtml.Td(className='td-sub-property-name', children=['Target']),
+                    dhtml.Td(className='td-sub-property-value', children=['test3'])]),
+                dhtml.Tr(className='tr-spacer', children=[]),
+                dhtml.Tr(className='tr-property', children=[
+                    dhtml.Td(className='td-property-name', children=['Total Connectors']),
+                    dhtml.Td(className='td-property-value', children=[f'{total_connectors}'])]),
+                dhtml.Tr(className='tr-sub-property', children=[
+                    dhtml.Td(className='td-sub-property-name', children=['Inputs']),
+                    dhtml.Td(className='td-sub-property-value', children=[f'{number_inputs}'])]),
+                dhtml.Tr(className='tr-sub-property', children=[
+                    dhtml.Td(className='td-sub-property-name', children=['Outputs']),
+                    dhtml.Td(className='td-sub-property-value', children=[f'{number_outputs}'])])
             ])
         ])
 

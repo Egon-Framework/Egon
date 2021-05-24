@@ -21,9 +21,16 @@ def get_cpu_usage(*args):
     now = time()
     y = np.transpose([psutil.cpu_percent(percpu=True)])
     x = list([now] for _ in range(psutil.cpu_count()))
-    return dict(x=x, y=y), list(range(psutil.cpu_count()))
+    return dict(x=x, y=y)
 
 
 def get_memory_usage(*args):
     mem = psutil.virtual_memory()[2]
     return dict(x=[[time()]], y=[[mem]])
+
+
+def get_queue_sizes(connector_list, *args):
+    now = time()
+    y = [[c.size for c in connector_list]]
+    x = np.full_like(y, now)
+    return dict(x=x, y=y)

@@ -43,6 +43,23 @@ class RamPercentageGraph(dcc.Graph):
         kwargs.setdefault('animate', True)
         mem_usage_at_init = psutil.virtual_memory()[2]
 
+        kwargs.setdefault('animate', True)
         fig = px.line({'Time': [time()], 'Memory (%)': [mem_usage_at_init]}, x='Time', y='Memory (%)')
         fig.layout.update({'yaxis': {'range': [0, 100]}})
+        super().__init__(*args, **kwargs, figure=fig)
+
+
+class PipelineQueueSize(dcc.Graph):
+    """A graph representing the number of queued objects in a pipeline"""
+
+    def __init__(self, pipeline, *args, **kwargs):
+
+        node_labels = []
+        plot_data = {'Time': [time()]}
+        for input_connector in pipeline.connectors[0]:
+            node_labels.append(input_connector.name)
+            plot_data[input_connector.name] = [0]
+
+        fig = px.line(plot_data, x='Time', y=node_labels)
+        kwargs.setdefault('animate', True)
         super().__init__(*args, **kwargs, figure=fig)

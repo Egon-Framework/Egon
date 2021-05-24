@@ -8,21 +8,34 @@ that nodes are properly interconnected.
 from __future__ import annotations
 
 from asyncio.subprocess import Process
+from copy import copy
 from inspect import getmembers
-from typing import List
+from typing import List, Tuple
 
-from . import nodes
-from .nodes import Node
+from .connectors import Input, Output
+from .nodes import AbstractNode
 
 
 class Pipeline:
     """Manages a collection of nodes as a single analysis pipeline"""
 
+    def __init__(self):
+        self._nodes = [getattr(self, a[0]) for a in getmembers(self, lambda a: isinstance(a, AbstractNode))]
+
+        self._inputs, self._outputs = [], []
+        for node in self.node_list:
+            for connector in node.get_connectors():
+                if isinstance(connector, Input):
+                    self._inputs.append(connector)
+
+                if isinstance(connector, Output):
+                    self._outputs.append(connector)
+
     def validate(self) -> None:
         """Set up the pipeline and check for any invalid node states"""
 
-        # Make sure the nodes are in a runnable condition before we start spawning _processes
-        for node in self.get_nodes():
+        # Make sure the nodes are in a runnable condition before we start spawning processes
+        for node in self.node_list:
             node.validate()
 
     def _get_processes(self) -> List[Process]:
@@ -30,15 +43,32 @@ class Pipeline:
 
         # Collect all of the processes assigned to each node
         processes = []
-        for node in self.get_nodes():
+        for node in self.node_list:
             processes.extend(node._processes)
 
         return processes
 
-    def get_nodes(self) -> List[Node]:
-        """Return a list of all nodes in the pipeline"""
+    @property
+    def node_list(self) -> List[AbstractNode]:
+        """Return a list of all nodes in the pipeline
 
-        return [getattr(self, a[0]) for a in getmembers(self, lambda a: isinstance(a, nodes.AbstractNode))]
+        Nodes are returned in an arbitrary order
+
+        Returns:
+            A list of nodes used to build the pipeline
+        """
+
+        return copy(self._nodes)
+
+    @property
+    def connectors(self) -> Tuple[List[Input], List[Output]]:
+        """Return the input and output connectors used by the pipeline
+
+        Returns:
+            A tuple with a list of input connectors and a list of output connectors
+        """
+
+        return copy(self._inputs), copy(self._outputs)
 
     def num_processes(self) -> int:
         """The number of processes forked by to the pipeline"""

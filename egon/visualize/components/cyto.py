@@ -26,11 +26,10 @@ class PipelineCytoscape(cyto.Cytoscape):
         """
 
         elements = []
-        self.pipeline_nodes = pipeline.get_nodes()
         stylesheet = kwargs.pop('stylesheet', self.default_stylesheet())
 
         # Iterate over pipeline nodes in an arbitrary order O(n)
-        for node in pipeline.get_nodes():
+        for node in pipeline.node_list:
             # Identify and label the node on the plot
             node_id = str(id(node))
             elements.append({
