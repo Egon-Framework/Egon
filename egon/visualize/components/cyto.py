@@ -34,7 +34,7 @@ class PipelineCytoscape(cyto.Cytoscape):
             node_id = str(id(node))
             elements.append({
                 'data': {'id': node_id, 'label': node.name},
-                'classes': self.node_class(node)
+                'classes': self._get_node_classes(node)
             })
 
             # Draw an arrow from the node to any downstream nodes
@@ -69,7 +69,7 @@ class PipelineCytoscape(cyto.Cytoscape):
             return yaml.safe_load(infile)
 
     @staticmethod
-    def node_class(node: AbstractNode) -> str:
+    def _get_node_classes(node: AbstractNode) -> str:
         """Return the CSS class of a plotted node
 
         Return value depends on the type of node (e.g., source or target)

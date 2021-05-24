@@ -53,6 +53,11 @@ class PipelineQueueSize(dcc.Graph):
     """A graph representing the number of queued objects in a pipeline"""
 
     def __init__(self, pipeline, *args, **kwargs):
+        """Plot the size of a pipeline's input queues over time
+
+        Args:
+            Any arguments for a dash ``Graph`` object except ``figure``
+        """
 
         node_labels = []
         plot_data = {'Time': [time()]}
