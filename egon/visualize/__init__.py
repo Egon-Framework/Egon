@@ -62,7 +62,6 @@ class Visualizer(dash.Dash):
         """Create the HTML content to be displayed by the app
 
         Args:
-            pipeline: The pipeline to draw data from when populating the HTML
             update_interval: How frequently to update the page in milliseconds
 
         Returns:
@@ -83,13 +82,15 @@ class Visualizer(dash.Dash):
             ])
 
         # Here we start building the right column
+        options = ['grid', 'breadthfirst', 'circle']
+        labels = ['Grid', 'Breadth First', 'Circle']
         dropdown_layout_selector = \
             dhtml.Div(className='div-dropdown-layout', children=[
                 dcc.Dropdown(
                     id='dropdown-layout',
                     value=DEFAULT_LAYOUT,
                     clearable=False,
-                    options=[{'label': name.title(), 'value': name} for name in ['grid', 'breadthfirst', 'circle']]
+                    options=[{'label': label, 'value': name} for name, label in zip(options, labels)]
                 )
             ])
 

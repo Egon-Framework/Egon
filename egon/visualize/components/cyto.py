@@ -27,6 +27,8 @@ class PipelineCytoscape(cyto.Cytoscape):
 
         elements = []
         stylesheet = kwargs.pop('stylesheet', self.default_stylesheet())
+        kwargs.setdefault('minZoom', 1)
+        kwargs.setdefault('maxZoom', 1)
 
         # Iterate over pipeline nodes in an arbitrary order O(n)
         for node in pipeline.node_list:

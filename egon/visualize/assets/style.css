@@ -267,6 +267,7 @@ h6 {
 .div-left-panel {
     background-color: #f9f9f9;
     padding: 32px;
+    min-width: 400px;
 }
 
 
