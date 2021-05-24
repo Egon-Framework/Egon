@@ -14,7 +14,7 @@ class Logo(dhtml.Div):
     def __init__(self) -> None:
         super().__init__(className='div-logo', children=[
             dhtml.A(target=DOC_URL, className='display-inline', children=[
-                # dhtml.Img(className='logo', src=self.get_asset_url('logo.svg')),
+                dhtml.Img(className='logo', src='https://mwvgroup.github.io/Egon/assets/images/logo.svg'),
                 dhtml.Span(className='logo-text', children=['Egon'])
             ])
         ])
