@@ -180,34 +180,36 @@ body {
     line-height: 1.6;
     font-family: sans-serif;
     background-color: #eaeaea;
+    font-size: 12px;
 }
 
-.tr-property {
-    font-family: sans-serif;
-    font-size: 16px;
-
-}
-
-.td-sub-property {
-    font-family: sans-serif;
-    font-size: 14px;
-    padding-left: 12px;
-}
-
-.td-spacer {
-    padding: 6px;
+p {
+    text-align: justify;
+    padding-bottom: 20px;
 }
 
 table {
     margin-bottom: 40px;
 }
 
-.float-right {
-    float: right;
-}
-
-.display-inline {
+button {
     display: inline-block;
+    height: 38px;
+    padding: 0 30px;
+    color: #555;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 38px;
+    letter-spacing: .1rem;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+    box-sizing: border-box;
 }
 
 /* Typography
@@ -264,23 +266,12 @@ h6 {
 
 .div-left-panel {
     background-color: #f9f9f9;
-}
-
-.div-right-panel {
-    padding: 0 64px 0 32px;
-}
-
-.div-info {
     padding: 32px;
 }
 
-.div-info p {
-    font-size: 12px;
-    text-align: justify;
-}
 
-.height-50 {
-    height: 50%;
+.div-right-panel {
+    padding: 0 64px 0 32px;
 }
 
 .logo {
@@ -295,27 +286,12 @@ h6 {
     font-weight: bold;
 }
 
-button {
-    display: inline-block;
-    height: 38px;
-    padding: 0 30px;
-    color: #555;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 38px;
-    letter-spacing: .1rem;
-    text-transform: uppercase;
-    text-decoration: none;
-    white-space: nowrap;
-    background-color: transparent;
-    border-radius: 4px;
-    border: 1px solid #bbb;
-    cursor: pointer;
-    box-sizing: border-box;
-}
 
 .div-run-button {
+    float: right;
+}
+
+.div-dropdown-layout {
     float: right;
 }
 
@@ -323,4 +299,21 @@ button {
     color: #b4b4b4;
     border-color: rgba(180, 180, 180, 0.4);
     border-radius: 20px 20px 20px 20px / 50% 50% 50% 50%;
+    min-width: 200px;
+}
+
+.tr-property {
+    font-family: sans-serif;
+    font-size: 14px;
+
+}
+
+.td-sub-property {
+    font-family: sans-serif;
+    font-size: 12px;
+    padding-left: 12px;
+}
+
+.td-spacer {
+    padding: 6px;
 }
