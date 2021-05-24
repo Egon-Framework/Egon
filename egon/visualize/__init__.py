@@ -78,7 +78,7 @@ class Visualizer(dash.Dash):
             dhtml.Div(className='div-info three columns div-left-panel', children=[
                 ecomp.custom.Logo(),
                 ecomp.custom.ClusterUsageWarning(),
-                dhtml.H6('Pipeline Summary'),
+                dhtml.H6('Pipeline Summary', id='h6-summary'),
                 ecomp.custom.SummaryTable(self._pipeline),
                 dhtml.Div(className='div-run-button', children=[
                     dhtml.Button('Run Pipeline', id='run-button')
@@ -87,13 +87,14 @@ class Visualizer(dash.Dash):
 
         # Here we start building the right column
         dropdown_layout_selector = \
-            dcc.Dropdown(
-                id='dropdown-layout',
-                className='float-right',
-                value=DEFAULT_LAYOUT,
-                clearable=False,
-                options=[{'label': name.title(), 'value': name} for name in ['grid', 'breadthfirst', 'circle']]
-            )
+            dhtml.Div(className='float-right', children=[
+                dcc.Dropdown(
+                    id='dropdown-layout',
+                    value=DEFAULT_LAYOUT,
+                    clearable=False,
+                    options=[{'label': name.title(), 'value': name} for name in ['grid', 'breadthfirst', 'circle']]
+                )
+            ])
 
         right_column = \
             dhtml.Div(className='nine columns div-right-panel', children=[

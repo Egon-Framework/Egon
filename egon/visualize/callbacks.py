@@ -35,7 +35,7 @@ def get_cytoscape_node_colors(pipeline_nodes: List, style: dict, *args: Optional
 
     style = style.copy()
     for i, node in enumerate(pipeline_nodes):
-        color = 'black' if node.node_finished else 'green'
+        color = 'grey' if node.node_finished else 'green'
         style[-i]['style']['background-color'] = color
 
     return style
