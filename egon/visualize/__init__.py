@@ -8,10 +8,9 @@ import plotly.express as px
 
 from egon.pipeline import Pipeline
 from egon.visualize import callbacks
-from egon.visualize.cyto import PipelineCytoscape
+from egon.visualize import components as ecomp
 
 DEFAULT_LAYOUT = 'grid'
-DOC_URL = 'https://mwvgroup.github.io/Egon/'
 
 
 class Visualizer(dash.Dash):
@@ -26,6 +25,7 @@ class Visualizer(dash.Dash):
 
         super().__init__(__name__)
         pipeline.validate()
+
         self.layout = self._build_html(pipeline)
         self._assign_callbacks()
 
@@ -44,7 +44,15 @@ class Visualizer(dash.Dash):
         #     ddep.Input('interval', 'n_intervals')
         # )(callbacks.update_cytoscape_node_colors)
 
-    def _build_html(self, pipeline: Pipeline, update_interval: int = 2) -> dhtml.Div:
+        self.callback(
+            ddep.Output('graph-cpu-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
+        )(callbacks.get_cpu_usage)
+
+        self.callback(
+            ddep.Output('graph-mem-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
+        )(callbacks.get_memory_usage)
+
+    def _build_html(self, pipeline: Pipeline, update_interval: int = 1) -> dhtml.Div:
         """Create the HTML content to be displayed by the app
 
         Args:
@@ -59,50 +67,19 @@ class Visualizer(dash.Dash):
         page_update_interval = dcc.Interval(id='interval', interval=update_interval_ms)
 
         # The page has left and right columns which we build separately
-        # We define the contents of each column and then assemble them individually
-
         # Here we start building the left column
-        # ######################################
-        app_logo = \
-            dhtml.Div(className='div-logo', children=[
-                dhtml.A(target=DOC_URL, className='display-inline', children=[
-                    dhtml.Img(className='logo', src=self.get_asset_url('logo.svg')),
-                    dhtml.Span(className='logo-text', children=['Egon'])
-                ])
-            ])
-
-        pipeline_summary_table = \
-            dhtml.Div(className='div-infotable', children=[
-                dhtml.Table(children=[
-                    dhtml.Tr(children=[dhtml.Td(children=['Input Nodes']), dhtml.Td(children=['test1'])]),
-                    dhtml.Tr(children=[dhtml.Td(children=['Inline Nodes']), dhtml.Td(children=['test2'])]),
-                    dhtml.Tr(children=[dhtml.Td(children=['Target Nodes']), dhtml.Td(children=['test3'])]),
-                    dhtml.Tr(children=[dhtml.Td(children=['Total Nodes']), dhtml.Td(children=['test4'])]),
-                    dhtml.Tr(children=[dhtml.Td(children=['Connectors']), dhtml.Td(children=['test5'])])
-                ])
-            ])
-
-        pipeline_run_button = \
-            dhtml.Div(className='div-runbutton', children=[
-                dhtml.Button('Run Pipeline', id='run-button')
-            ])
-
-        lef_column = \
+        left_column = \
             dhtml.Div(className='div-info three columns div-left-panel', children=[
-                app_logo,
-                dcc.Markdown(
-                    'This interface provides a general overview of the current pipeline status. '
-                    'Please consult with a system administrator before running on a cluster environment. '
-                    f'For more information see the [official documentation]({DOC_URL}).'
-                ),
+                ecomp.custom.Logo(),
+                ecomp.custom.ClusterUsageWarning(),
                 dhtml.H6('Pipeline Summary'),
-                pipeline_summary_table,
-                pipeline_run_button
-
+                ecomp.custom.SummaryTable(pipeline),
+                dhtml.Div(className='div-run-button', children=[
+                    dhtml.Button('Run Pipeline', id='run-button')
+                ])
             ])
 
         # Here we start building the right column
-        # #######################################
         dropdown_layout_selector = \
             dcc.Dropdown(
                 id='dropdown-layout',
@@ -112,23 +89,14 @@ class Visualizer(dash.Dash):
                 options=[{'label': name.title(), 'value': name} for name in ['grid', 'breadthfirst', 'circle']]
             )
 
-        cytoscape = PipelineCytoscape(pipeline, id='pipeline-cyto')
-
         queue_data = {'Time': [0, 1], 'Queue Size': [0, 1], 'Node Name': [0, 1]}
         queue_fig = px.area(queue_data, x='Time', y='Queue Size')
         queue_graph = dcc.Graph(id='queue_size_plot', figure=queue_fig)
 
-        sys_data = {'Time': [0, 1], 'CPU (%)': [0, 1], 'Memory (GB)': [1, 1]}
-        cpu_fig = px.line(sys_data, x='Time', y='CPU (%)')
-        cpu_graph = dcc.Graph(id='cpu_usage_plot', figure=cpu_fig)
-
-        mem_fig = px.line(sys_data, x='Time', y='Memory (GB)')
-        mem_graph = dcc.Graph(id='memory_usage_plot', figure=mem_fig)
-
         right_column = \
             dhtml.Div(className='nine columns div-right-panel', children=[
                 dropdown_layout_selector,
-                cytoscape,
+                ecomp.cyto.PipelineCytoscape(pipeline, id='pipeline-cyto'),
                 dhtml.H4('Pipeline Load'),
                 dhtml.Div(
                     className='div-pipeline-load',
@@ -139,10 +107,10 @@ class Visualizer(dash.Dash):
                 dhtml.Div(
                     className='div-system-load',
                     children=[
-                        cpu_graph,
-                        mem_graph
+                        ecomp.graphs.CpuPercentageGraph(id='graph-cpu-usage'),
+                        ecomp.graphs.RamPercentageGraph(id='graph-mem-usage')
                     ]),
             ])
 
         # Return the fully assembled page with both columns
-        return dhtml.Div(className='row', children=[lef_column, right_column, page_update_interval])
+        return dhtml.Div(className='row', children=[left_column, right_column, page_update_interval])

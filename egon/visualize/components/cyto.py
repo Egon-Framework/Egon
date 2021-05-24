@@ -1,3 +1,7 @@
+"""Dash components that provide a cytoscape-like representation of running
+pipelines.
+"""
+
 from pathlib import Path
 from typing import List
 
@@ -7,7 +11,7 @@ import yaml
 from egon.nodes import AbstractNode, Node, Source
 from egon.pipeline import Pipeline
 
-STYLE_PATH = Path(__file__).resolve().parent / 'assets' / 'default_style.yml'
+STYLE_PATH = Path(__file__).resolve().parent.parent / 'assets' / 'default_style.yml'
 
 
 class PipelineCytoscape(cyto.Cytoscape):
