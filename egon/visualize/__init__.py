@@ -79,10 +79,7 @@ class Visualizer(dash.Dash):
                 ecomp.custom.Logo(),
                 ecomp.custom.ClusterUsageWarning(),
                 dhtml.H6('Pipeline Summary', id='h6-summary'),
-                ecomp.custom.SummaryTable(self._pipeline),
-                dhtml.Div(className='div-run-button', children=[
-                    dhtml.Button('Run Pipeline', id='run-button')
-                ])
+                ecomp.custom.SummaryTable(self._pipeline)
             ])
 
         # Here we start building the right column
