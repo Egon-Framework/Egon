@@ -12,6 +12,8 @@ from egon.pipeline import Pipeline
 from egon.visualize import callbacks
 from egon.visualize import components as ecomp
 
+FORMAT_LABELS = ('Grid', 'Breadth First', 'Circle')
+CYTOSCAPE_FORMATS = ('grid', 'breadthfirst', 'circle')
 DEFAULT_LAYOUT = 'grid'
 
 
@@ -31,6 +33,7 @@ class Visualizer(dash.Dash):
         self._pipeline = pipeline
         self.layout = self._build_html()
         self._assign_callbacks()
+        self.title = 'Egon Visualizer'
 
     def _assign_callbacks(self) -> None:
         """Assign callbacks to connect templated HTML with pipeline behavior"""
@@ -83,15 +86,13 @@ class Visualizer(dash.Dash):
             ])
 
         # Here we start building the right column
-        options = ['grid', 'breadthfirst', 'circle']
-        labels = ['Grid', 'Breadth First', 'Circle']
         dropdown_layout_selector = \
             dhtml.Div(className='div-dropdown-layout', children=[
                 dcc.Dropdown(
                     id='dropdown-layout',
                     value=DEFAULT_LAYOUT,
                     clearable=False,
-                    options=[{'label': label, 'value': name} for name, label in zip(options, labels)]
+                    options=[{'label': label, 'value': name} for name, label in zip(CYTOSCAPE_FORMATS, FORMAT_LABELS)]
                 )
             ])
 
