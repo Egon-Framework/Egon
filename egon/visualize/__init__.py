@@ -1,6 +1,7 @@
 """Launches a web app for visualizing the status of a pipeline"""
 
 from functools import partial
+from itertools import chain
 
 import dash
 import dash.dependencies as ddep
@@ -43,7 +44,7 @@ class Visualizer(dash.Dash):
             ddep.Output('pipeline-cyto', 'stylesheet'),
             ddep.Input('pipeline-cyto', 'stylesheet'),
             ddep.Input('interval', 'n_intervals')
-        )(partial(callbacks.get_cytoscape_node_colors, self._pipeline.node_list))
+        )(partial(callbacks.get_cytoscape_node_colors, chain(*self._pipeline.nodes)))
 
         self.callback(
             ddep.Output('graph-queue-size', 'extendData'),

@@ -81,5 +81,5 @@ class NodeDiscovery(TestCase):
     def runTest(self) -> None:
         pipeline = MockPipeline()
         expected_nodes = [pipeline.root, pipeline.leaf]
-        recovered_nodes = pipeline.node_list
+        recovered_nodes = pipeline.nodes
         self.assertCountEqual(expected_nodes, recovered_nodes)

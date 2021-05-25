@@ -10,32 +10,49 @@ from __future__ import annotations
 from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
-from typing import List, Tuple
+from itertools import chain
+from typing import List, Tuple, cast
 
-from .connectors import Input, Output
-from .nodes import AbstractNode
+from . import connectors as conn
+from . import nodes
 
 
 class Pipeline:
     """Manages a collection of nodes as a single analysis pipeline"""
 
     def __init__(self):
-        self._nodes = [getattr(self, a[0]) for a in getmembers(self, lambda a: isinstance(a, AbstractNode))]
 
-        self._inputs, self._outputs = [], []
-        for node in self.node_list:
+        # Store the nodes and connectors used to build the pipeline
+        # so they can be exposed by public accessors
+        self._inputs: List[conn.Input] = []
+        self._outputs: List[conn.Output] = []
+        self._sources: List[nodes.Source] = []
+        self._inlines: List[nodes.Node] = []
+        self._targets: List[nodes.Target] = []
+
+        for attr_name, *_ in getmembers(self, lambda a: isinstance(a, nodes.AbstractNode)):
+            node = getattr(self, attr_name)
+            if isinstance(node, nodes.Node):
+                self._inlines.append(node)
+
+            elif isinstance(node, nodes.Source):
+                self._sources.append(node)
+
+            else:  # Assume all other nodes are inlines
+                self._targets.append(node)
+
             for connector in node.get_connectors():
-                if isinstance(connector, Input):
+                if isinstance(connector, conn.Input):
                     self._inputs.append(connector)
 
-                if isinstance(connector, Output):
+                else:  # Assume all other connectors are outputs
+                    connector = cast(connector, conn.Output)
                     self._outputs.append(connector)
 
     def validate(self) -> None:
         """Set up the pipeline and check for any invalid node states"""
 
-        # Make sure the nodes are in a runnable condition before we start spawning processes
-        for node in self.node_list:
+        for node in chain(*self.nodes):
             node.validate()
 
     def _get_processes(self) -> List[Process]:
@@ -43,13 +60,13 @@ class Pipeline:
 
         # Collect all of the processes assigned to each node
         processes = []
-        for node in self.node_list:
+        for node in chain(*self.nodes):
             processes.extend(node._processes)
 
         return processes
 
     @property
-    def node_list(self) -> List[AbstractNode]:
+    def nodes(self) -> Tuple[List[nodes.Source], List[nodes.Node], List[nodes.Target]]:
         """Return a list of all nodes in the pipeline
 
         Nodes are returned in an arbitrary order
@@ -58,10 +75,10 @@ class Pipeline:
             A list of nodes used to build the pipeline
         """
 
-        return copy(self._nodes)
+        return copy(self._sources), copy(self._inlines), copy(self._targets)
 
     @property
-    def connectors(self) -> Tuple[List[Input], List[Output]]:
+    def connectors(self) -> Tuple[List[conn.Input], List[conn.Output]]:
         """Return the input and output connectors used by the pipeline
 
         Returns:

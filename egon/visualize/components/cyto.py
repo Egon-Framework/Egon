@@ -2,6 +2,7 @@
 pipelines.
 """
 
+from itertools import chain
 from pathlib import Path
 from typing import List
 
@@ -31,7 +32,7 @@ class PipelineCytoscape(cyto.Cytoscape):
         kwargs.setdefault('maxZoom', 1)
 
         # Iterate over pipeline nodes in an arbitrary order O(n)
-        for node in pipeline.node_list:
+        for node in chain(*pipeline.nodes):
             # Identify and label the node on the plot
             node_id = str(id(node))
             elements.append({

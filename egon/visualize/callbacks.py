@@ -1,7 +1,7 @@
 """Callbacks used to update the content of Dash components"""
 
 from time import time
-from typing import List, Optional
+from typing import List, Optional, Iterable
 
 import numpy as np
 import psutil
@@ -22,7 +22,7 @@ def cast_layout_to_dict(layout: str) -> dict:
     return {'name': layout, 'animate': True}
 
 
-def get_cytoscape_node_colors(pipeline_nodes: List, style: dict, *args: Optional) -> dict:
+def get_cytoscape_node_colors(pipeline_nodes: Iterable, style: dict, *args: Optional) -> dict:
     """Return the color a pipeline's nodes should be shaded
 
     Args:

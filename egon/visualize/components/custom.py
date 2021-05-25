@@ -28,7 +28,12 @@ class SummaryTable(dhtml.Div):
         number_inputs = len(inputs)
         number_outputs = len(outputs)
         total_connectors = number_inputs + number_outputs
-        number_nodes = len(pipeline.node_list)
+
+        sources, nodes, targets = pipeline.nodes
+        num_sources = len(sources)
+        num_nodes = len(nodes)
+        num_targets = len(targets)
+        number_nodes = num_sources + num_nodes + num_targets
 
         super().__init__(className='div-info-table', children=[
             dhtml.Table(className='table-info-primary', children=[
@@ -39,13 +44,13 @@ class SummaryTable(dhtml.Div):
                         dhtml.Table(className='table-info-secondary', children=[
                             dhtml.Tr(children=[
                                 dhtml.Td(children=['Source:']),
-                                dhtml.Td(children=['Not Implemented'])]),
+                                dhtml.Td(children=[f'{num_sources}'])]),
                             dhtml.Tr(children=[
                                 dhtml.Td(children=['Inline:']),
-                                dhtml.Td(children=['Not Implemented'])]),
+                                dhtml.Td(children=[f'{num_nodes}'])]),
                             dhtml.Tr(children=[
                                 dhtml.Td(children=['Target:']),
-                                dhtml.Td(children=['Not Implemented'])
+                                dhtml.Td(children=[f'{num_targets}'])
                             ])])])]),
 
                 dhtml.Tr(children=[
