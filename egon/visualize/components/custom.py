@@ -30,31 +30,36 @@ class SummaryTable(dhtml.Div):
         total_connectors = number_inputs + number_outputs
         number_nodes = len(pipeline.node_list)
 
-        super().__init__(className='div-infotable', children=[
-            dhtml.Table(id='table-infotable', children=[
-                dhtml.Tr(className='tr-property', children=[
-                    dhtml.Td(className='td-property', children=['Total Nodes']),
-                    dhtml.Td(className='td-property', children=[f'{number_nodes}'])]),
-                dhtml.Tr(className='tr-sub-property', children=[
-                    dhtml.Td(className='td-sub-property', children=['Source']),
-                    dhtml.Td(className='td-sub-property', children=['Not Implemented'])]),
-                dhtml.Tr(className='tr-sub-property', children=[
-                    dhtml.Td(className='td-sub-property', children=['Inline']),
-                    dhtml.Td(className='td-sub-property', children=['Not Implemented'])]),
-                dhtml.Tr(className='tr-sub-property', children=[
-                    dhtml.Td(className='td-sub-property', children=['Target']),
-                    dhtml.Td(className='td-sub-property', children=['Not Implemented'])]),
-                dhtml.Tr(className='tr-spacer', children=[
-                    dhtml.Td(className='td-spacer')]),
-                dhtml.Tr(className='tr-property', children=[
-                    dhtml.Td(className='td-property', children=['Total Connectors']),
-                    dhtml.Td(className='td-property', children=[f'{total_connectors}'])]),
-                dhtml.Tr(className='tr-sub-property', children=[
-                    dhtml.Td(className='td-sub-property', children=['Inputs']),
-                    dhtml.Td(className='td-sub-property', children=[f'{number_inputs}'])]),
-                dhtml.Tr(className='tr-sub-property', children=[
-                    dhtml.Td(className='td-sub-property', children=['Outputs']),
-                    dhtml.Td(className='td-sub-property', children=[f'{number_outputs}'])])
+        super().__init__(className='div-info-table', children=[
+            dhtml.Table(className='table-info-primary', children=[
+                dhtml.Tr(children=[
+                    dhtml.Td(children=[f'Total Nodes: {number_nodes}'])]),
+                dhtml.Tr(children=[
+                    dhtml.Td(children=[
+                        dhtml.Table(className='table-info-secondary', children=[
+                            dhtml.Tr(children=[
+                                dhtml.Td(children=['Source:']),
+                                dhtml.Td(children=['Not Implemented'])]),
+                            dhtml.Tr(children=[
+                                dhtml.Td(children=['Inline:']),
+                                dhtml.Td(children=['Not Implemented'])]),
+                            dhtml.Tr(children=[
+                                dhtml.Td(children=['Target:']),
+                                dhtml.Td(children=['Not Implemented'])
+                            ])])])]),
+
+                dhtml.Tr(children=[
+                    dhtml.Td(children=[f'Total Connectors: {total_connectors}'])]),
+                dhtml.Tr(children=[
+                    dhtml.Td(children=[
+                        dhtml.Table(className='table-info-secondary', children=[
+                            dhtml.Tr(children=[
+                                dhtml.Td(children=['Input:']),
+                                dhtml.Td(children=[f'{number_inputs}'])]),
+                            dhtml.Tr(children=[
+                                dhtml.Td(children=['Output:']),
+                                dhtml.Td(children=[f'{number_outputs}'])])
+                        ])])])
             ])
         ])
 

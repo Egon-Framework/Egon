@@ -188,10 +188,6 @@ p {
     padding-bottom: 20px;
 }
 
-table {
-    margin-bottom: 40px;
-}
-
 button {
     display: inline-block;
     height: 38px;
@@ -212,12 +208,19 @@ button {
     box-sizing: border-box;
 }
 
+.Select-control {
+    color: #b4b4b4;
+    border-color: rgba(180, 180, 180, 0.4);
+    border-radius: 20px 20px 20px 20px / 50% 50% 50% 50%;
+    min-width: 200px;
+}
+
 /* Typography
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 h1, h2, h3, h4, h5, h6 {
     margin-top: 20px;
     margin-bottom: 0;
-    font-weight: 300;
+    font-weight: 400;
 }
 
 h1 {
@@ -275,46 +278,33 @@ h6 {
     padding: 0 64px 0 32px;
 }
 
-.logo {
-    width: 60px;
-    vertical-align: middle;
-    border-style: none;
-}
 
-.logo-text {
-    color: #252930;
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-
-.div-run-button {
-    float: right;
-}
-
-.div-dropdown-layout {
-    float: right;
-}
-
-.Select-control {
-    color: #b4b4b4;
-    border-color: rgba(180, 180, 180, 0.4);
-    border-radius: 20px 20px 20px 20px / 50% 50% 50% 50%;
-    min-width: 200px;
-}
-
-.tr-property {
-    font-family: sans-serif;
+.table-info-primary {
     font-size: 14px;
 
 }
 
-.td-sub-property {
-    font-family: sans-serif;
+.table-info-secondary {
     font-size: 12px;
-    padding-left: 12px;
+    font-family: sans-serif;
+    margin-left: 15px;
+    margin-bottom: 10px;
 }
 
-.td-spacer {
-    padding: 6px;
+.logo {
+    width: 60px;
+    vertical-align: middle;
+    border-style: none;
+    padding-right: 10px;
+}
+
+.logo-text {
+    color: #252930;
+    font-size: 30px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.div-dropdown-layout {
+    float: right;
 }
