@@ -8,6 +8,7 @@ from __future__ import annotations
 import abc
 import inspect
 import multiprocessing as mp
+import os
 from abc import ABC
 from time import sleep
 from typing import Collection, List, Union
@@ -186,8 +187,10 @@ class AbstractNode(abc.ABC):
         return f'{self.__class__.__name__}(num_processes={self.num_processes})'
 
     def __del__(self) -> None:
-        if any(p.is_alive() for p in self._processes):
-            raise RuntimeError(f'Cannot delete a node while it is running (del called on node {self})')
+        for p in self._processes:
+            # First part of the conditional skips the check if del is called from child
+            if p._parent_pid == os.getpid() and p.is_alive():
+                raise RuntimeError(f'Cannot delete a node while it is running (del called on node {self})')
 
 
 class Source(AbstractNode, ABC):
