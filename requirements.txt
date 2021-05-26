@@ -1,1 +1,8 @@
-boltons
+boltons>=20.2.1
+egon>=0.3.1
+pyyaml>=5.4.1
+plotly>=4.14.3
+psutil>=5.8.0
+dash>=1.20.0
+numpy>=1.20.1
+setuptools>=51.0.0
