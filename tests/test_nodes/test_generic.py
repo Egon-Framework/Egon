@@ -53,7 +53,7 @@ class Execution(TestCase):
     def setUp(self) -> None:
         """Create a testing node that tracks the execution method of it's methods"""
 
-        self.node = mock.MockNode(num_processes=1)
+        self.node = mock.MockNode(num_processes=0)
 
         # Track the call order of node functions
         self.call_list = []
@@ -79,8 +79,7 @@ class Execution(TestCase):
         """Test the ``node_finished`` property is updated after node execution"""
 
         self.assertFalse(self.node.node_finished, 'Default finished state is not False.')
-        self.node._processes[0].start()
-        self.node._processes[0].join()
+        self.node.execute()
         self.assertTrue(self.node.node_finished)
 
 
