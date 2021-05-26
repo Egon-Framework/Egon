@@ -38,15 +38,10 @@ class AbstractNode(abc.ABC):
     def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
-        if num_processes < 0:
-            raise ValueError(f'Cannot instantiate a negative number of forked processes (got {num_processes}).')
+        self.name = name or self.__class__.__name__
+        self._processes = []  # Populates when self.num_processes is assigned
 
-        # Note that we use the memory address of the processes and not the
-        # ``pid`` attribute. ``pid`` is only set after the process is started.
-        self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
-        self._states = mp.Manager().dict({id(p): False for p in self._processes})
-        self.name = self.__class__.__name__
-
+        self.num_processes = num_processes
         self._current_process_state = False
         for connection in self.get_connectors():
             connection._node = self
@@ -76,9 +71,8 @@ class AbstractNode(abc.ABC):
         if any(p.is_alive() for p in self._processes):
             raise RuntimeError('Cannot change number of processes while node is running.')
 
-        if self.num_processes == num_processes:  # pragma: no cover
-            return
-
+        # Note that we use the memory address of the processes and not the
+        # ``pid`` attribute. ``pid`` is only set after the process is started.
         self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
         self._states = mp.Manager().dict({id(p): False for p in self._processes})
 
@@ -97,7 +91,9 @@ class AbstractNode(abc.ABC):
     def node_finished(self) -> bool:
         """Return whether all node processes have finished processing data"""
 
-        return all(self._states.values())
+        # Check that all forked processes are finished, including the current process
+        # Checking the current process is necessary in case the node is run in Main
+        return all(self._states.values()) and self.process_finished
 
     @abc.abstractmethod
     def validate(self) -> None:
