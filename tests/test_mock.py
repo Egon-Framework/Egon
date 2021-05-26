@@ -5,7 +5,7 @@ from unittest import TestCase
 from egon.mock import MockSource, MockTarget
 
 
-class MockNodeTroughput(TestCase):
+class MockNodeThroughput(TestCase):
 
     def runTest(self):
         test_data = [1, 2, 3]
