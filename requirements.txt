@@ -1,7 +1,9 @@
 boltons>=20.2.1
+dash>=1.20.0
 dash_cytoscape>=0.2.0
 egon>=0.3.1
 pyyaml>=5.4.1
+pandas
 plotly>=4.14.3
 psutil>=5.8.0
 dash>=1.20.0
