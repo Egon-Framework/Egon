@@ -1,7 +1,7 @@
 """Callbacks used to update the content of Dash components"""
 
 from time import time
-from typing import List, Optional, Iterable
+from typing import Iterable, List, Optional
 
 import numpy as np
 import psutil
@@ -22,6 +22,7 @@ def cast_layout_to_dict(layout: str) -> dict:
     return {'name': layout, 'animate': True}
 
 
+# noinspection PyUnusedLocal
 def get_cytoscape_node_colors(pipeline_nodes: Iterable, style: dict, *args: Optional) -> dict:
     """Return the color a pipeline's nodes should be shaded
 
@@ -41,7 +42,8 @@ def get_cytoscape_node_colors(pipeline_nodes: Iterable, style: dict, *args: Opti
     return style
 
 
-def get_cpu_usage(*args) -> dict:
+# noinspection PyUnusedLocal
+def get_cpu_usage(*args: Optional) -> dict:
     """Return a dictionary with the current CPU usage
 
     Returns:
@@ -54,7 +56,8 @@ def get_cpu_usage(*args) -> dict:
     return dict(x=x, y=y)
 
 
-def get_memory_usage(*args) -> dict:
+# noinspection PyUnusedLocal
+def get_memory_usage(*args: Optional) -> dict:
     """Return a dictionary with the current memory usage
 
     Returns:
@@ -65,7 +68,8 @@ def get_memory_usage(*args) -> dict:
     return dict(x=[[time()]], y=[[mem]])
 
 
-def get_queue_sizes(connector_list: List[Input], *args) -> dict:
+# noinspection PyUnusedLocal
+def get_queue_sizes(connector_list: List[Input], *args: Optional) -> dict:
     """Return a dictionary with the que size for a list of connectors
 
     Args:

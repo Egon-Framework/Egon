@@ -1,4 +1,5 @@
 """Tests the functionality of ``Output`` connector objects."""
+
 from time import sleep
 from unittest import TestCase
 
