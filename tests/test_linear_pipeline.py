@@ -42,6 +42,8 @@ class AddingPipeline(Pipeline):
 
         self.send_node.output.connect(self.internal_node.input)
         self.internal_node.output.connect(self.receive_node.input)
+
+        super().__init__()
         self.validate()
 
 
@@ -55,8 +57,8 @@ class TestPipelineThroughput(TestCase):
         AddingPipeline().run()
 
         # Convert the queue into a list
-        l = []
+        as_list = []
         while GLOBAL_QUEUE.qsize() != 0:
-            l.append(GLOBAL_QUEUE.get())
+            as_list.append(GLOBAL_QUEUE.get())
 
-        self.assertCountEqual(TESTING_VALS, l)
+        self.assertCountEqual(TESTING_VALS, as_list)

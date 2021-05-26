@@ -85,6 +85,7 @@ class AbstractNode(abc.ABC):
 
     @process_finished.setter
     def process_finished(self, state: bool) -> None:
+        sleep(2)  # Allow any ``put`` calls to finish populating the queue
         self._states[id(mp.current_process())] = self._current_process_state = state
 
     @property
@@ -93,7 +94,10 @@ class AbstractNode(abc.ABC):
 
         # Check that all forked processes are finished, including the current process
         # Checking the current process is necessary in case the node is run in Main
-        return all(self._states.values()) and self.process_finished
+        if self.num_processes == 0:
+            return self.process_finished
+
+        return all(self._states.values())
 
     @abc.abstractmethod
     def validate(self) -> None:
@@ -147,12 +151,6 @@ class AbstractNode(abc.ABC):
     def teardown(self) -> None:
         """Teardown tasks called after running ``action``"""
 
-    def _set_process_finished(self) -> None:
-        """Record the parent process as having finished executing analysis tasks"""
-
-        sleep(2)  # Allow any ``put`` calls to finish populating the queue
-        self.process_finished = True
-
     def execute(self) -> None:
         """Execute the pipeline node
 
@@ -162,7 +160,7 @@ class AbstractNode(abc.ABC):
         self.setup()
         self.action()
         self.teardown()
-        self._set_process_finished()
+        self.process_finished = True
 
     def expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
