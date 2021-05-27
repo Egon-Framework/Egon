@@ -11,7 +11,7 @@ from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
 from itertools import chain
-from typing import List, Tuple, cast
+from typing import List, Tuple
 
 from . import connectors as conn
 from . import nodes
@@ -20,7 +20,7 @@ from . import nodes
 class Pipeline:
     """Manages a collection of nodes as a single analysis pipeline"""
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         # Store the nodes and connectors used to build the pipeline
         # so they can be exposed by public accessors
@@ -41,13 +41,9 @@ class Pipeline:
             else:  # Assume all other nodes are inlines
                 self._targets.append(node)
 
-            for connector in node.get_connectors():
-                if isinstance(connector, conn.Input):
-                    self._inputs.append(connector)
-
-                else:  # Assume all other connectors are outputs
-                    connector = cast(connector, conn.Output)
-                    self._outputs.append(connector)
+            inputs, outputs = node.connectors
+            self._inputs.extend(inputs)
+            self._outputs.extend(outputs)
 
     def validate(self) -> None:
         """Set up the pipeline and check for any invalid node states"""

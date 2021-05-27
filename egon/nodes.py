@@ -9,8 +9,10 @@ import abc
 import inspect
 import multiprocessing as mp
 from abc import ABC
+from copy import copy
+from itertools import chain
 from time import sleep
-from typing import Collection, List, Union
+from typing import Collection, List, Tuple, Union
 
 from . import connectors, exceptions
 
@@ -43,17 +45,26 @@ class AbstractNode(abc.ABC):
 
         self.num_processes = num_processes
         self._current_process_state = False
-        for connection in self.get_connectors():
-            connection._node = self
 
-    def get_connectors(self) -> List[connectors.AbstractConnector]:
+        self._inputs = []
+        self._outputs = []
+        for connector in self._get_attrs(connectors.AbstractConnector):
+            connector._node = self
+            if isinstance(connector, connectors.Input):
+                self._inputs.append(connector)
+
+            else:  # Assume all other connectors are outputs
+                self._outputs.append(connector)
+
+    @property
+    def connectors(self) -> Tuple[List[connectors.Input], List[connectors.Output]]:
         """Return a list of all connectors associated with the node
 
         Returns:
             A list of Inout and Output connectors
         """
 
-        return self._get_attrs(connectors.AbstractConnector)
+        return copy(self._inputs), copy(self._outputs)
 
     @property
     def num_processes(self) -> int:
@@ -114,7 +125,7 @@ class AbstractNode(abc.ABC):
             MissingConnectionError: For an invalid instance construction
         """
 
-        for conn in self.get_connectors():
+        for conn in chain(*self.connectors):
             if not conn.is_connected:
                 raise exceptions.MissingConnectionError(
                     f'Connector {conn} does not have an established connection (Node: {conn.parent_node})')
@@ -236,7 +247,8 @@ class Node(Target, Source, ABC):
             OrphanedNodeError: For an instance that is inaccessible by connectors
         """
 
-        if not self.get_connectors():
+        inputs, outputs = self.connectors
+        if not (inputs or outputs):
             raise exceptions.OrphanedNodeError('Node has no associated connectors and is inaccessible by the pipeline.')
 
         self._validate_connections()
