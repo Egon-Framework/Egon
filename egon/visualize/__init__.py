@@ -44,12 +44,6 @@ class Visualizer(dash.Dash):
         )(callbacks.cast_layout_to_dict)
 
         self.callback(
-            ddep.Output('pipeline-cyto', 'stylesheet'),
-            ddep.Input('pipeline-cyto', 'stylesheet'),
-            ddep.Input('interval', 'n_intervals')
-        )(partial(callbacks.get_cytoscape_node_colors, chain(*self._pipeline.nodes)))
-
-        self.callback(
             ddep.Output('graph-queue-size', 'extendData'),
             ddep.Input('interval', 'n_intervals')
         )(partial(callbacks.get_queue_sizes, self._pipeline.connectors[0]))
