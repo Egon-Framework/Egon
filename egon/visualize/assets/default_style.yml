@@ -19,18 +19,26 @@
       'width': 2
     }
   },
-
   # Class selectors
   {
-    'selector': '.target_node',
+    'selector': '.connector',
     'style': {
-      'shape': 'square'
+      'text-valign': 'center',
+      'text-margin-x': '5'
     }
   },
   {
-    'selector': '.source_node',
+    'selector': '.input',
     'style': {
-      'shape': 'triangle'
+      'shape': 'square',
+      'text-halign': 'right',
+    }
+  },
+  {
+    'selector': '.output',
+    'style': {
+      'shape': 'triangle',
+      'text-halign': 'left',
     }
   }
 ]

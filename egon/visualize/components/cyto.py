@@ -9,6 +9,7 @@ from typing import List
 import dash_cytoscape as cyto
 import yaml
 
+from egon.connectors import Input, Output
 from egon.nodes import AbstractNode, Node, Source
 from egon.pipeline import Pipeline
 
@@ -26,37 +27,35 @@ class PipelineCytoscape(cyto.Cytoscape):
             kwargs: Any additional ``Cytoscape`` arguments except for ``elements``
         """
 
-        elements = []
         stylesheet = kwargs.pop('stylesheet', self.default_stylesheet())
         kwargs.setdefault('minZoom', 1)
         kwargs.setdefault('maxZoom', 1)
 
-        # Iterate over pipeline nodes in an arbitrary order O(n)
+        elements = []
         for node in chain(*pipeline.nodes):
             # Identify and label the node on the plot
             node_id = str(id(node))
             elements.append({
                 'data': {'id': node_id, 'label': node.name},
-                'classes': self._get_node_classes(node)
+                'classes': self._get_classes(node)
             })
 
-            # Draw an arrow from the node to any downstream nodes
-            for downstream in node.downstream_nodes():
-                downstream_id = str(id(downstream))
-                elements.append(
-                    {'data': {'source': node_id, 'target': downstream_id}}
-                )
+            for connector in chain(*node.connectors):
+                connector_id = str(id(connector))
+                elements.append({
+                    'data': {'id': connector_id, 'parent': node_id, 'label': connector.name},
+                    'classes': self._get_classes(connector)
+                })
 
-            # Add individual CSS styling the current node
-            # We guarantee that these values are at the end of the style sheet
-            stylesheet.append(
-                {
-                    'selector': f'[id == {node_id}]',
-                    'style': {
-                        'background-color': 'grey'
-                    }
-                }
-            )
+                if isinstance(connector, Input):
+                    for partner in connector.get_partners():
+                        partner_id = str(id(partner))
+                        elements.append({
+                            'data': {'source': partner_id,
+                                     'source_label': partner.name,
+                                     'target': connector_id,
+                                     'target_label': connector.name}
+                        })
 
         super().__init__(elements=elements, stylesheet=stylesheet, **kwargs)
 
@@ -72,7 +71,7 @@ class PipelineCytoscape(cyto.Cytoscape):
             return yaml.safe_load(infile)
 
     @staticmethod
-    def _get_node_classes(node: AbstractNode) -> str:
+    def _get_classes(node: AbstractNode) -> str:
         """Return the CSS class of a plotted node
 
         Return value depends on the type of node (e.g., source or target)
@@ -84,10 +83,16 @@ class PipelineCytoscape(cyto.Cytoscape):
             The CSS class of the node
         """
 
+        if isinstance(node, Input):
+            return 'connector input'
+
+        if isinstance(node, Output):
+            return 'connector output'
+
         if isinstance(node, Node):
-            return 'default_node'
+            return 'pipeline-node inline'
 
         if isinstance(node, Source):
-            return 'source_node'
+            return 'pipeline-node source'
 
-        return 'target_node'
+        return 'pipeline-node target'
