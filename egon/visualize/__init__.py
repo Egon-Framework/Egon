@@ -1,7 +1,6 @@
 """Launches a web app for visualizing the status of a pipeline"""
 
 from functools import partial
-from itertools import chain
 
 import dash
 import dash.dependencies as ddep
@@ -27,13 +26,12 @@ class Visualizer(dash.Dash):
             pipeline: The pipeline to build the application around
         """
 
-        super().__init__(__name__)
+        super().__init__(__name__, update_title=None, title='Egon Visualizer')
         pipeline.validate()
 
         self._pipeline = pipeline
         self.layout = self._build_html()
         self._assign_callbacks()
-        self.title = 'Egon Visualizer'
 
     def _assign_callbacks(self) -> None:
         """Assign callbacks to connect templated HTML with pipeline behavior"""
