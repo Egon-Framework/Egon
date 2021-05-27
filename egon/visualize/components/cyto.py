@@ -28,8 +28,8 @@ class PipelineCytoscape(cyto.Cytoscape):
         """
 
         stylesheet = kwargs.pop('stylesheet', self.default_stylesheet())
-        kwargs.setdefault('minZoom', 0.5)
-        kwargs.setdefault('maxZoom', 1.5)
+        kwargs.setdefault('minZoom', 0.25)
+        kwargs.setdefault('maxZoom', 2)
         kwargs.setdefault('style', dict())
         kwargs['style'].setdefault('width', '100%')
         kwargs['style'].setdefault('height', '800px')

@@ -74,7 +74,5 @@ class ClusterUsageWarning(dcc.Markdown):
 
     def __init__(self) -> None:
         super().__init__(
-            'This interface provides a general pipeline overview for testing and debugging purposes. '
-            'Please consult with a system administrator before running on a cluster environment. '
-            f'For more information see the [official documentation]({DOC_URL}).'
+
         )

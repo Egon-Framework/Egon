@@ -72,7 +72,18 @@ class Visualizer(dash.Dash):
         left_column = \
             dhtml.Div(className='three columns div-left-panel', children=[
                 ecomp.custom.Logo(),
-                ecomp.custom.ClusterUsageWarning(),
+                dcc.Markdown(
+                    'This interface provides a general pipeline overview for testing and debugging purposes. '
+                    'Please consult with a system administrator before running on a cluster environment. '
+                    f'For more information see the [official documentation]({ecomp.custom.DOC_URL}).'
+                ),
+                dhtml.P(
+                    'The structural preview of your pipeline will load with an automatically optimized '
+                    'layout. Depending on the number of nodes in your pipeline and the size of your '
+                    'window, you may need to manually reposition plot elements by dragging them around '
+                    'the window. Predefined layouts are also provided via the dropdown box at the top '
+                    'of the page.'
+                ),
                 dhtml.H6('Pipeline Summary', id='h6-summary'),
                 ecomp.custom.SummaryTable(self._pipeline)
             ])

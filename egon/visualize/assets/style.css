@@ -185,7 +185,7 @@ body {
 
 p {
     text-align: justify;
-    padding-bottom: 20px;
+    padding-bottom: 5px;
 }
 
 button {
@@ -222,6 +222,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 20px;
     margin-bottom: 0;
     font-weight: 400;
+    padding-top: 15px;
 }
 
 h1 {
