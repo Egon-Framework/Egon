@@ -212,7 +212,8 @@ button {
     color: #b4b4b4;
     border-color: rgba(180, 180, 180, 0.4);
     border-radius: 20px 20px 20px 20px / 50% 50% 50% 50%;
-    min-width: 200px;
+    width: 150px;
+
 }
 
 /* Typography
@@ -271,24 +272,7 @@ h6 {
     background-color: #f9f9f9;
     padding: 32px;
     min-width: 400px;
-}
-
-
-.div-right-panel {
-    padding: 0 64px 0 32px;
-}
-
-
-.table-info-primary {
-    font-size: 14px;
-
-}
-
-.table-info-secondary {
-    font-size: 12px;
-    font-family: sans-serif;
-    margin-left: 15px;
-    margin-bottom: 10px;
+    max-width: 600px;
 }
 
 .logo {
@@ -305,6 +289,22 @@ h6 {
     vertical-align: middle;
 }
 
+.table-info-primary {
+    font-size: 14px;
+}
+
+.table-info-secondary {
+    font-size: 12px;
+    font-family: sans-serif;
+    margin-left: 15px;
+    margin-bottom: 10px;
+}
+
+.div-right-panel {
+    padding: 0 64px 0 32px;
+}
+
 .div-dropdown-layout {
-    float: right;
+    margin-bottom: 5px;
+    display: flex; justify-content: flex-end;
 }
