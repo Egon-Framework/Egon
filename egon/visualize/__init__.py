@@ -1,7 +1,5 @@
 """Launches a web app for visualizing the status of a pipeline"""
 
-from functools import partial
-
 import dash
 import dash.dependencies as ddep
 import dash_core_components as dcc
@@ -19,7 +17,7 @@ DEFAULT_LAYOUT = 'grid'
 class Visualizer(dash.Dash):
     """Application for visualizing an analysis pipeline"""
 
-    def __init__(self, pipeline: Pipeline) -> None:
+    def __init__(self, pipeline: Pipeline, update_interval: int = 1, display_interval: int = 120) -> None:
         """Create an interactive application for viewing pipeline objects
 
         Args:
@@ -30,6 +28,9 @@ class Visualizer(dash.Dash):
         pipeline.validate()
 
         self._pipeline = pipeline
+        self._update_interval = update_interval
+        self._num_displayed_data_points = display_interval // update_interval
+
         self.layout = self._build_html()
         self._assign_callbacks()
 
@@ -41,30 +42,29 @@ class Visualizer(dash.Dash):
             ddep.Input('dropdown-layout', 'value')
         )(callbacks.cast_layout_to_dict)
 
+        pipeline_callbacks = callbacks.PipelineStatus(self._num_displayed_data_points, self._pipeline.connectors[0])
         self.callback(
             ddep.Output('graph-queue-size', 'extendData'),
             ddep.Input('interval', 'n_intervals')
-        )(partial(callbacks.get_queue_sizes, self._pipeline.connectors[0]))
+        )(pipeline_callbacks.get_queue_sizes)
 
+        system_callbacks = callbacks.SystemUsage(self._num_displayed_data_points)
         self.callback(
             ddep.Output('graph-cpu-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
-        )(callbacks.get_cpu_usage)
+        )(system_callbacks.get_cpu_usage)
 
         self.callback(
             ddep.Output('graph-mem-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
-        )(callbacks.get_memory_usage)
+        )(system_callbacks.get_memory_usage)
 
-    def _build_html(self, update_interval: int = 1) -> dhtml.Div:
+    def _build_html(self) -> dhtml.Div:
         """Create the HTML content to be displayed by the app
-
-        Args:
-            update_interval: How frequently to update the page in milliseconds
 
         Returns:
             An HTML component
         """
 
-        update_interval_ms = update_interval * 1000  # The interval in milliseconds
+        update_interval_ms = self._update_interval * 1000  # The interval in milliseconds
         page_update_interval = dcc.Interval(id='interval', interval=update_interval_ms)
 
         # The page has left and right columns which we build separately

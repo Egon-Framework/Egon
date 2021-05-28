@@ -22,12 +22,17 @@ class PipelineCytoscape(cyto.Cytoscape):
     def __init__(self, pipeline: Pipeline, **kwargs) -> None:
         """An interactive, cytoscape style plot of a constructed pipeline
 
+        If the ``stylesheet`` argument is provided, the default style sheet for
+        this class is overwritten.
+
         Args:
             pipeline: The pipeline that will be visualized
             kwargs: Any additional ``Cytoscape`` arguments except for ``elements``
         """
 
         stylesheet = kwargs.pop('stylesheet', self.default_stylesheet())
+
+        # Set customized defaults
         kwargs.setdefault('minZoom', 0.25)
         kwargs.setdefault('maxZoom', 2)
         kwargs.setdefault('style', dict())
@@ -36,7 +41,7 @@ class PipelineCytoscape(cyto.Cytoscape):
 
         elements = []
         for node in chain(*pipeline.nodes):
-            # Identify and label the node on the plot
+            # Add the pipeline node to the figure
             node_id = str(id(node))
             elements.append({
                 'data': {'id': node_id, 'label': node.name},
@@ -44,20 +49,24 @@ class PipelineCytoscape(cyto.Cytoscape):
             })
 
             for connector in chain(*node.connectors):
+                # Add each connector to the figure
                 connector_id = str(id(connector))
                 elements.append({
                     'data': {'id': connector_id, 'parent': node_id, 'label': connector.name},
                     'classes': self._get_classes(connector)
                 })
 
+                # Draw an arrow between the connector and each of its partners
                 if isinstance(connector, Input):
                     for partner in connector.get_partners():
                         partner_id = str(id(partner))
                         elements.append({
-                            'data': {'source': partner_id,
-                                     'source_label': partner.name,
-                                     'target': connector_id,
-                                     'target_label': connector.name}
+                            'data': {
+                                'source': partner_id,
+                                'source_label': partner.name,
+                                'target': connector_id,
+                                'target_label': connector.name
+                            }
                         })
 
         super().__init__(elements=elements, stylesheet=stylesheet, **kwargs)

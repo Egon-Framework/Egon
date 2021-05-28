@@ -1,8 +1,5 @@
-"""Custom components that are highly specific to building Dash applications
-for the Egon package.
-"""
+"""Custom Dash components that are highly specific to the Egon package."""
 
-import dash_core_components as dcc
 import dash_html_components as dhtml
 
 DOC_URL = 'https://mwvgroup.github.io/Egon/'
@@ -67,12 +64,3 @@ class SummaryTable(dhtml.Div):
                         ])])])
             ])
         ])
-
-
-class ClusterUsageWarning(dcc.Markdown):
-    """Paragraph warning the user not to run on a cluster"""
-
-    def __init__(self) -> None:
-        super().__init__(
-
-        )

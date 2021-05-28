@@ -307,5 +307,6 @@ h6 {
 
 .div-dropdown-layout {
     margin-bottom: 5px;
-    display: flex; justify-content: flex-end;
+    display: flex;
+    justify-content: flex-end;
 }
