@@ -8,6 +8,7 @@ that nodes are properly interconnected.
 from __future__ import annotations
 
 import os
+import warnings
 from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
@@ -117,7 +118,8 @@ class Pipeline:
     def visualize(
             self,
             host: str = os.getenv("HOST", "127.0.0.1"),
-            port: int = os.getenv("PORT", "8050")
+            port: int = os.getenv("PORT", "8050"),
+            quiet: bool = False
     ) -> None:
         """Launch a server instance for monitoring the pipeline in real time
 
@@ -127,10 +129,18 @@ class Pipeline:
         Args:
             host: Host IP used to serve the application
             port: Port used to serve the application
+            quiet: Suppress any status messages or warnings
         """
 
         from waitress import serve
 
+        if not quiet:
+            print(f'Launching server at http://{host}:{port}')
+
         # we increase the number of threads from 4 (the default) to 8 so the
         # server can more efficiently handle all of the application callbacks
-        serve(Visualizer(self).server, host=host, port=int(port), threads=8, _quiet=False)
+        with warnings.catch_warnings():
+            if quiet:
+                warnings.simplefilter('ignore')
+
+            serve(Visualizer(self).server, host=host, port=int(port), threads=8, _quiet=quiet)
