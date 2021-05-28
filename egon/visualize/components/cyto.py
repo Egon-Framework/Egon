@@ -17,7 +17,7 @@ from egon.nodes import AbstractNode, Node, Source
 if TYPE_CHECKING:  # pragma: no cover
     from egon.pipeline import Pipeline
 
-STYLE_PATH = Path(__file__).resolve().parent.parent / 'assets' / 'default_style.yml'
+STYLE_PATH = Path(__file__).resolve().parent.parent / 'assets' / 'cyto_style.yml'
 
 
 class PipelineCytoscape(cyto.Cytoscape):
