@@ -3,6 +3,6 @@ analysis pipelines. See the online documentation at
 https://mwvgroup.github.io/Egon/
 """
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 __author__ = 'Daniel Perrefort'
 __license__ = 'GPL 3.0'
