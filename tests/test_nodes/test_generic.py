@@ -69,7 +69,7 @@ class Execution(TestCase):
         self.assertListEqual(self.call_list, expected_order)
 
     def test_process_is_finished_on_execute(self) -> None:
-        """Test the ``process_finished`` property is updated after node execution"""
+        """Test the ``_process_finished`` property is updated after node execution"""
 
         self.assertFalse(self.node.process_finished, 'Default finished state is not False.')
         self.node.execute()
@@ -125,25 +125,25 @@ class ExpectingData(TestCase):
     def test_false_for_empty_queue_and_finished_parent(self) -> None:
         """Test the return is False for a EMPTY queue and a FINISHED PARENT node"""
 
-        self.root.process_finished = True
+        self.root._process_finished = True
         self.assertFalse(self.node.expecting_data())
 
     def test_true_if_input_queue_has_data(self) -> None:
         """Test the return is True for a NOT EMPTY queue and a FINISHED PARENT node"""
 
-        self.root.process_finished = True
+        self.root._process_finished = True
         self.node.input._queue.put(5)
         self.assertTrue(self.node.expecting_data())
 
     def test_true_if_parent_is_running(self) -> None:
         """Test the return is True for a EMPTY queue and a NOT FINISHED PARENT node"""
 
-        self.root.process_finished = False
+        self.root._process_finished = False
         self.assertTrue(self.node.expecting_data())
 
     def test_true_if_input_queue_has_data_and_parent_is_running(self) -> None:
         """Test the return is True for a NOT EMPTY queue and a NOT FINISHED PARENT node"""
 
-        self.root.process_finished = False
+        self.root._process_finished = False
         self.node.input._queue.put(5)
         self.assertTrue(self.node.expecting_data())

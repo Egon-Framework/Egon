@@ -91,11 +91,17 @@ class AbstractNode(abc.ABC):
     def process_finished(self) -> bool:
         """Return whether the current process has finished processing data"""
 
+        return self._process_finished
+
+    @property
+    def _process_finished(self) -> bool:
+        """Return whether the current process has finished processing data"""
+
         # Use get in case called from a process not forked by the class __init__
         return self._states.get(mp.current_process().pid, self._current_process_state)
 
-    @process_finished.setter
-    def process_finished(self, state: bool) -> None:
+    @_process_finished.setter
+    def _process_finished(self, state: bool) -> None:
         sleep(2)  # Allow any ``put`` calls to finish populating the queue
         self._states[id(mp.current_process())] = self._current_process_state = state
 
@@ -106,7 +112,7 @@ class AbstractNode(abc.ABC):
         # Check that all forked processes are finished, including the current process
         # Checking the current process is necessary in case the node is run in Main
         if self.num_processes == 0:
-            return self.process_finished
+            return self._process_finished
 
         return all(self._states.values())
 
@@ -171,7 +177,7 @@ class AbstractNode(abc.ABC):
         self.setup()
         self.action()
         self.teardown()
-        self.process_finished = True
+        self._process_finished = True
 
     def expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
