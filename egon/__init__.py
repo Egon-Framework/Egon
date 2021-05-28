@@ -4,5 +4,5 @@ https://mwvgroup.github.io/Egon/
 """
 
 __version__ = '0.4.1'
-__author__ = 'Daniel Perrefort'
+__author__ = 'MWV Research Group'
 __license__ = 'GPL 3.0'
