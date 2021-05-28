@@ -34,7 +34,7 @@ class InputGet(TestCase):
         source = MockSource(num_processes=0)
         target = MockTarget(num_processes=0)  # Run node in current process only
         source.output.connect(target.input)
-        source.process_finished = True
+        source._process_finished = True
 
         self.assertFalse(target.expecting_data())
         self.assertIs(target.input.get(timeout=15), KillSignal)
