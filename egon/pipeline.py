@@ -7,6 +7,7 @@ that nodes are properly interconnected.
 
 from __future__ import annotations
 
+import os
 from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
@@ -15,6 +16,7 @@ from typing import List, Tuple
 
 from . import connectors as conn
 from . import nodes
+from .visualize import Visualizer
 
 
 class Pipeline:
@@ -111,3 +113,21 @@ class Pipeline:
 
         for p in self._get_processes():
             p.start()
+
+    def visualize(
+            self,
+            host: str = os.getenv("HOST", "127.0.0.1"),
+            port: int = os.getenv("PORT", "8050"),
+            proxy: str = os.getenv("DASH_PROXY", None)
+    ) -> None:
+        """Visualize the pipeline as a
+
+        Args:
+            host: Host IP used to serve the application
+            port: Port used to serve the application
+            proxy: If this application will be served to a different URL
+                via a proxy configured outside of Python, you can list it here
+                as a string of the form ``"{input}::{output}"``
+        """
+
+        Visualizer(self).run_server(host=host, port=port, proxy=proxy)
