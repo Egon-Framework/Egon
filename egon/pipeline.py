@@ -117,8 +117,7 @@ class Pipeline:
     def visualize(
             self,
             host: str = os.getenv("HOST", "127.0.0.1"),
-            port: int = os.getenv("PORT", "8050"),
-            proxy: str = os.getenv("DASH_PROXY", None)
+            port: int = os.getenv("PORT", "8050")
     ) -> None:
         """Launch a server instance for monitoring the pipeline in real time
 
@@ -128,9 +127,10 @@ class Pipeline:
         Args:
             host: Host IP used to serve the application
             port: Port used to serve the application
-            proxy: If this application will be served to a different URL
-                via a proxy configured outside of Python, you can list it here
-                as a string of the form ``"{input}::{output}"``
         """
 
-        Visualizer(self).run_server(host=host, port=port, proxy=proxy)
+        from waitress import serve
+
+        # we increase the number of threads from 4 (the default) to 8 so the
+        # server can more efficiently handle all of the application callbacks
+        serve(Visualizer(self).server, host=host, port=int(port), threads=8, _quiet=False)
