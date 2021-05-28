@@ -3,9 +3,8 @@
 from time import sleep
 from unittest import TestCase
 
-from egon.connectors import Output
-from egon.exceptions import OrphanedNodeError, MissingConnectionError
-from egon.mock import MockSource, MockPipeline
+from egon.exceptions import MissingConnectionError, OrphanedNodeError
+from egon.mock import MockPipeline, MockSource
 from egon.nodes import Node
 from egon.pipeline import Pipeline
 
@@ -35,15 +34,15 @@ class ProcessDiscovery(TestCase):
 
         pipeline = MockPipeline()
         expected_processes = []
-        expected_processes.extend(pipeline.root._processes)
-        expected_processes.extend(pipeline.leaf._processes)
+        expected_processes.extend(pipeline.source._processes)
+        expected_processes.extend(pipeline.target._processes)
         self.assertCountEqual(expected_processes, pipeline._get_processes())
 
     def test_process_count(self) -> None:
         """Test the pipelines process count matches the sum of processes allocated to each node"""
 
         pipeline = MockPipeline()
-        expected_count = pipeline.root.num_processes + pipeline.leaf.num_processes
+        expected_count = pipeline.source.num_processes + pipeline.target.num_processes
         self.assertEqual(expected_count, pipeline.num_processes())
 
 
@@ -61,6 +60,7 @@ class PipelineValidation(TestCase):
 
             def __init__(self) -> None:
                 self.node = OrphanedNode()
+                super().__init__()
 
         with self.assertRaises(OrphanedNodeError):
             Pipe().validate()
@@ -71,6 +71,7 @@ class PipelineValidation(TestCase):
         class Pipe(Pipeline):
             def __init__(self) -> None:
                 self.root = MockSource()
+                super().__init__()
 
         with self.assertRaises(MissingConnectionError):
             Pipe().validate()
@@ -81,6 +82,7 @@ class NodeDiscovery(TestCase):
 
     def runTest(self) -> None:
         pipeline = MockPipeline()
-        expected_nodes = [pipeline.root, pipeline.leaf]
-        recovered_nodes = pipeline.get_nodes()
-        self.assertCountEqual(expected_nodes, recovered_nodes)
+        sources, inlines, targets = pipeline.nodes
+        self.assertCountEqual([pipeline.source], sources)
+        self.assertCountEqual([], inlines)
+        self.assertCountEqual([pipeline.target], targets)

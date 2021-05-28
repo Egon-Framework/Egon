@@ -1,0 +1,44 @@
+[
+  # Group selectors
+  {
+    'selector': 'node',
+    'style': {
+      'content': 'data(label)',
+      'shape': 'circle',
+      'width': 45,
+      'height': 45
+    }
+  },
+  {
+    'selector': 'edge',
+    'style': {
+      'curve-style': 'bezier',
+      'target-arrow-shape': 'triangle',
+      'target-arrow-color': 'black',
+      'line-color': 'black',
+      'width': 2
+    }
+  },
+  # Class selectors
+  {
+    'selector': '.connector',
+    'style': {
+      'text-valign': 'center',
+      'text-margin-x': '5'
+    }
+  },
+  {
+    'selector': '.input',
+    'style': {
+      'shape': 'square',
+      'text-halign': 'right',
+    }
+  },
+  {
+    'selector': '.output',
+    'style': {
+      'shape': 'triangle',
+      'text-halign': 'left',
+    }
+  }
+]

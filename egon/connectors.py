@@ -28,9 +28,9 @@ class AbstractConnector:
             name: Optional human readable name for the connector object
         """
 
-        self.name = name
-        self._node: Optional[AbstractNode] = None  # The node that this connector is assigned to
-        self._connected_partners = ObjectCollection()  # Tracks other connectors that are connected to this instance
+        self.name = str(id(self)) if name is None else name
+        self._node: Optional[AbstractNode] = None  # This is the node that this connector is assigned to
+        self._connected_partners = ObjectCollection()  # This tracks other connectors that connect to this instance
 
     @property
     def parent_node(self) -> AbstractNode:
@@ -67,7 +67,7 @@ class Input(AbstractConnector):
             maxsize: The maximum number of communicated items to store in memory
         """
 
-        super().__init__(name)
+        super().__init__(name=name)
         self._maxsize = maxsize
         self._queue = mp.Queue(maxsize=maxsize)
 
@@ -160,7 +160,7 @@ class Output(AbstractConnector):
             name: Optional human readable name for the connector object
         """
 
-        super().__init__(name)
+        super().__init__(name=name)
         self._partner: Optional[Input] = None  # The connector object of another node
 
     def connect(self, connector: Input) -> None:

@@ -53,9 +53,10 @@ class WrappedAsSource(BaseTests, TestCase):
     wrapper = staticmethod(as_source)
     return_type = Source
 
-    @skip
+    @skip('The wrapped object is expected to be an iterable. '
+          'This test skipped and replaced with `test_wrapped_is_still_generator`')
     def test_wrapped_is_still_callable(self) -> None:
-        """Test wrapped functions are still callable"""
+        ...
 
     def test_wrapped_is_still_generator(self) -> None:
         """Test the wrapped function still acts as a generator"""

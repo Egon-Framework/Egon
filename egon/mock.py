@@ -14,7 +14,7 @@ class MockSource(nodes.Source):
     def __init__(self, load_data: list = None, num_processes=0) -> None:
         self.output = Output()
         self.load_data = load_data or []
-        super(MockSource, self).__init__(num_processes)
+        super(MockSource, self).__init__(num_processes=num_processes)
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -29,7 +29,7 @@ class MockTarget(nodes.Target):
     def __init__(self, num_processes=0) -> None:
         self.input = Input()
         self.accumulated_data = []
-        super(MockTarget, self).__init__(num_processes)
+        super(MockTarget, self).__init__(num_processes=num_processes)
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -44,7 +44,7 @@ class MockNode(nodes.Node):
     def __init__(self, num_processes=0) -> None:
         self.output = Output()
         self.input = Input()
-        super(MockNode, self).__init__(num_processes)
+        super(MockNode, self).__init__(num_processes=num_processes)
 
     def action(self) -> None:  # pragma: no cover
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -57,11 +57,10 @@ class MockPipeline(Pipeline):
     """A mock pipeline with a root and a leaf"""
 
     def __init__(self) -> None:
-        self.root = MockSource(num_processes=2)
-        self.leaf = MockTarget()
-        self.root.output.connect(self.leaf.input)
-
-        self.validate()
+        self.source = MockSource(num_processes=2)
+        self.target = MockTarget()
+        self.source.output.connect(self.target.input)
+        super().__init__()
 
     def all_alive(self) -> bool:
         """Return if all processes managed by the pipeline are alive"""

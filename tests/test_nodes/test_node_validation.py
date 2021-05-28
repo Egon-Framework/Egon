@@ -1,4 +1,4 @@
-"""Tests the validation processes of pipelione nodes"""
+"""Tests the validation processes of pipeline nodes"""
 
 from unittest import TestCase, skip
 
@@ -20,6 +20,7 @@ class BaseTests:
             def action(self) -> None:
                 """Dummy placeholder method required by abstract parent"""
 
+        # noinspection PyAttributeOutsideInit
         self.test_class = TestSource()
 
     def test_error_if_orphaned(self) -> None:

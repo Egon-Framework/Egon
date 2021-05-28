@@ -9,8 +9,10 @@ import abc
 import inspect
 import multiprocessing as mp
 from abc import ABC
+from copy import copy
+from itertools import chain
 from time import sleep
-from typing import Collection, List, Union
+from typing import Collection, List, Tuple, Union
 
 from . import connectors, exceptions
 
@@ -35,23 +37,34 @@ def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractCon
 class AbstractNode(abc.ABC):
     """Base class for constructing pipeline nodes"""
 
-    def __init__(self, num_processes=1) -> None:
+    def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
-        if num_processes < 0:
-            raise ValueError(f'Cannot instantiate a negative number of forked processes (got {num_processes}).')
+        self.name = name or self.__class__.__name__
+        self._processes = []  # Populates when self.num_processes is assigned
 
-        # Note that we use the memory address and not the ``pid`` attribute.
-        # ``pid`` is only set after the process is started
-        self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
-        self._states = mp.Manager().dict({id(p): False for p in self._processes})
-
+        self.num_processes = num_processes
         self._current_process_state = False
-        for connection in self.get_connectors():
-            connection._node = self
 
-    def get_connectors(self) -> List[connectors.AbstractConnector]:
-        return self._get_attrs(connectors.AbstractConnector)
+        self._inputs = []
+        self._outputs = []
+        for connector in self._get_attrs(connectors.AbstractConnector):
+            connector._node = self
+            if isinstance(connector, connectors.Input):
+                self._inputs.append(connector)
+
+            else:  # Assume all other connectors are outputs
+                self._outputs.append(connector)
+
+    @property
+    def connectors(self) -> Tuple[List[connectors.Input], List[connectors.Output]]:
+        """Return a list of all connectors associated with the node
+
+        Returns:
+            A list of Inout and Output connectors
+        """
+
+        return copy(self._inputs), copy(self._outputs)
 
     @property
     def num_processes(self) -> int:
@@ -60,7 +73,7 @@ class AbstractNode(abc.ABC):
         return len(self._processes)
 
     @num_processes.setter
-    def num_processes(self, num_processes) -> None:
+    def num_processes(self, num_processes: int) -> None:
         """The number of processes assigned to the current node"""
 
         if num_processes < 0:
@@ -69,9 +82,8 @@ class AbstractNode(abc.ABC):
         if any(p.is_alive() for p in self._processes):
             raise RuntimeError('Cannot change number of processes while node is running.')
 
-        if self.num_processes == num_processes:  # pragma: no cover
-            return
-
+        # Note that we use the memory address of the processes and not the
+        # ``pid`` attribute. ``pid`` is only set after the process is started.
         self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
         self._states = mp.Manager().dict({id(p): False for p in self._processes})
 
@@ -84,11 +96,17 @@ class AbstractNode(abc.ABC):
 
     @process_finished.setter
     def process_finished(self, state: bool) -> None:
+        sleep(2)  # Allow any ``put`` calls to finish populating the queue
         self._states[id(mp.current_process())] = self._current_process_state = state
 
     @property
     def node_finished(self) -> bool:
         """Return whether all node processes have finished processing data"""
+
+        # Check that all forked processes are finished, including the current process
+        # Checking the current process is necessary in case the node is run in Main
+        if self.num_processes == 0:
+            return self.process_finished
 
         return all(self._states.values())
 
@@ -107,7 +125,7 @@ class AbstractNode(abc.ABC):
             MissingConnectionError: For an invalid instance construction
         """
 
-        for conn in self.get_connectors():
+        for conn in chain(*self.connectors):
             if not conn.is_connected:
                 raise exceptions.MissingConnectionError(
                     f'Connector {conn} does not have an established connection (Node: {conn.parent_node})')
@@ -144,12 +162,6 @@ class AbstractNode(abc.ABC):
     def teardown(self) -> None:
         """Teardown tasks called after running ``action``"""
 
-    def _set_process_finished(self) -> None:
-        """Record the parent process as having finished executing analysis tasks"""
-
-        sleep(2)  # Allow any ``put`` calls to finish populating the queue
-        self.process_finished = True
-
     def execute(self) -> None:
         """Execute the pipeline node
 
@@ -159,7 +171,7 @@ class AbstractNode(abc.ABC):
         self.setup()
         self.action()
         self.teardown()
-        self._set_process_finished()
+        self.process_finished = True
 
     def expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
@@ -183,10 +195,6 @@ class AbstractNode(abc.ABC):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f'{self.__class__.__name__}(num_processes={self.num_processes})'
-
-    def __del__(self) -> None:
-        if any(p.is_alive() for p in self._processes):
-            raise RuntimeError(f'Cannot delete a node while it is running (del called on node {self})')
 
 
 class Source(AbstractNode, ABC):
@@ -239,7 +247,8 @@ class Node(Target, Source, ABC):
             OrphanedNodeError: For an instance that is inaccessible by connectors
         """
 
-        if not self.get_connectors():
+        inputs, outputs = self.connectors
+        if not (inputs or outputs):
             raise exceptions.OrphanedNodeError('Node has no associated connectors and is inaccessible by the pipeline.')
 
         self._validate_connections()
