@@ -2,16 +2,20 @@
 pipelines.
 """
 
+from __future__ import annotations
+
 from itertools import chain
 from pathlib import Path
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import dash_cytoscape as cyto
 import yaml
 
 from egon.connectors import Input, Output
 from egon.nodes import AbstractNode, Node, Source
-from egon.pipeline import Pipeline
+
+if TYPE_CHECKING:  # pragma: no cover
+    from egon.pipeline import Pipeline
 
 STYLE_PATH = Path(__file__).resolve().parent.parent / 'assets' / 'default_style.yml'
 

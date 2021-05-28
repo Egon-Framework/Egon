@@ -1,12 +1,15 @@
 """Callbacks used to update the content of Dash components"""
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, TYPE_CHECKING, Tuple
 
 import numpy as np
 import psutil
 
-from egon.connectors import Input
+if TYPE_CHECKING:  # pragma: no cover
+    from egon.connectors import Input
 
 
 def cast_layout_to_dict(layout: str) -> dict:

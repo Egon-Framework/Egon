@@ -1,13 +1,19 @@
 """Launches a web app for visualizing the status of a pipeline"""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import dash
 import dash.dependencies as ddep
 import dash_core_components as dcc
 import dash_html_components as dhtml
 
-from egon.pipeline import Pipeline
 from egon.visualize import callbacks
 from egon.visualize import components as ecomp
+
+if TYPE_CHECKING:  # pragma: no cover
+    from egon.pipeline import Pipeline
 
 FORMAT_LABELS = ('Grid', 'Breadth First', 'Circle')
 CYTOSCAPE_FORMATS = ('grid', 'breadthfirst', 'circle')

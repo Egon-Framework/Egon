@@ -1,12 +1,16 @@
 """Dash components that provide preconfigured plots for visualizing data."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import dash_core_components as dcc
 import plotly.express as px
 import psutil
 
-from egon.pipeline import Pipeline
+if TYPE_CHECKING:  # pragma: no cover
+    from egon.pipeline import Pipeline
 
 
 class CustomGraph(dcc.Graph):
