@@ -24,14 +24,14 @@ class Visualizer(dash.Dash):
             pipeline: The pipeline to build the application around
         """
 
-        super().__init__(__name__, update_title=None, title='Egon Visualizer')
         pipeline.validate()
 
         self._pipeline = pipeline
         self._update_interval = update_interval
         self._num_displayed_data_points = display_interval // update_interval
 
-        self.layout = self._build_html()
+        # self.layout = self._build_html()
+        super().__init__(__name__, update_title=None, title='Egon Visualizer')
         self._assign_callbacks()
 
     def _assign_callbacks(self) -> None:
@@ -57,7 +57,13 @@ class Visualizer(dash.Dash):
             ddep.Output('graph-mem-usage', 'extendData'), ddep.Input('interval', 'n_intervals')
         )(system_callbacks.get_memory_usage)
 
-    def _build_html(self) -> dhtml.Div:
+    #################################################################################################
+    # Some of the custom graph objects populate a placeholder value at init
+    # By overwriting the _layout attribute, graphs are re-rendered every time the webpage refreshes.
+    #################################################################################################
+
+    @property
+    def _layout(self) -> dhtml.Div:
         """Create the HTML content to be displayed by the app
 
         Returns:
@@ -120,3 +126,7 @@ class Visualizer(dash.Dash):
 
         # Return the fully assembled page with both columns
         return dhtml.Div(className='row', children=[left_column, right_column, page_update_interval])
+
+    @_layout.setter
+    def _layout(self, x):
+        pass
