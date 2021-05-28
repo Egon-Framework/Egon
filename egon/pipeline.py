@@ -120,7 +120,10 @@ class Pipeline:
             port: int = os.getenv("PORT", "8050"),
             proxy: str = os.getenv("DASH_PROXY", None)
     ) -> None:
-        """Visualize the pipeline as a
+        """Launch a server instance for monitoring the pipeline in real time
+
+        This is a blocking call intended to be run in the main application
+        process.
 
         Args:
             host: Host IP used to serve the application
