@@ -25,5 +25,6 @@ setup(name='egon',
       author_email='djperrefort@pitt.edu',
       license='GPL v3',
       python_requires='>=3.6',
-      install_requires=requirements
+      install_requires=requirements,
+      include_package_data=True
       )
