@@ -7,14 +7,13 @@ from __future__ import annotations
 
 import abc
 import inspect
-import multiprocessing as mp
 from abc import ABC
 from copy import copy
 from itertools import chain
-from time import sleep
 from typing import Collection, List, Tuple, Union
 
 from . import connectors, exceptions
+from ._utils import MPool
 
 
 def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractConnector]) -> List:
@@ -40,11 +39,9 @@ class AbstractNode(abc.ABC):
     def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
+        self._pool = MPool(num_processes, self.execute)
+        self.num_processes = self._pool.num_processes
         self.name = name or self.__class__.__name__
-        self._processes = []  # Populates when self.num_processes is assigned
-
-        self.num_processes = num_processes
-        self._current_process_state = False
 
         self._inputs = []
         self._outputs = []
@@ -65,45 +62,6 @@ class AbstractNode(abc.ABC):
         """
 
         return copy(self._inputs), copy(self._outputs)
-
-    @property
-    def num_processes(self) -> int:
-        """The number of processes assigned to the current node"""
-
-        return len(self._processes)
-
-    @num_processes.setter
-    def num_processes(self, num_processes: int) -> None:
-        """The number of processes assigned to the current node"""
-
-        if num_processes < 0:
-            raise ValueError(f'Cannot instantiate a negative number of forked processes (got {num_processes}).')
-
-        if any(p.is_alive() for p in self._processes):
-            raise RuntimeError('Cannot change number of processes while node is running.')
-
-        # Note that we use the memory address of the processes and not the
-        # ``pid`` attribute. ``pid`` is only set after the process is started.
-        self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
-        self._states = mp.Manager().dict({id(p): False for p in self._processes})
-
-    @property
-    def process_finished(self) -> bool:
-        """Return whether the current process has finished processing data"""
-
-        return self._process_finished
-
-    @property
-    def _process_finished(self) -> bool:
-        """Return whether the current process has finished processing data"""
-
-        # Use get in case called from a process not forked by the class __init__
-        return self._states.get(mp.current_process().pid, self._current_process_state)
-
-    @_process_finished.setter
-    def _process_finished(self, state: bool) -> None:
-        sleep(2)  # Allow any ``put`` calls to finish populating the queue
-        self._states[id(mp.current_process())] = self._current_process_state = state
 
     @property
     def node_finished(self) -> bool:
@@ -179,6 +137,7 @@ class AbstractNode(abc.ABC):
         self.teardown()
         self._process_finished = True
 
+    @property
     def expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
 
@@ -186,7 +145,7 @@ class AbstractNode(abc.ABC):
             # IMPORTANT: The order of the following code blocks is crucial
             # We check for any running upstream nodes first
             for output_connector in input_connector.get_partners():
-                if not output_connector.parent_node.node_finished:
+                if not output_connector.parent_node.pool_finished:
                     return True
 
             # Check for any unprocessed data once we know there are no
@@ -243,7 +202,7 @@ class Target(AbstractNode, ABC):
         self._validate_connections()
 
 
-class Node(Target, Source, ABC):
+class Node(AbstractNode, ABC):
     """A pipeline process that can have any number of input or output streams"""
 
     def validate(self) -> None:

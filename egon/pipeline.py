@@ -86,6 +86,7 @@ class Pipeline:
 
         return copy(self._inputs), copy(self._outputs)
 
+    @property
     def num_processes(self) -> int:
         """The number of processes forked by to the pipeline"""
 
@@ -106,14 +107,14 @@ class Pipeline:
     def wait_for_exit(self) -> None:
         """Wait for the pipeline to finish running before continuing execution"""
 
-        for p in self._get_processes():
-            p.join()
+        for node in chain(*self.nodes):
+            node._pool.join()
 
     def run_async(self) -> None:
         """Start all processes asynchronously"""
 
-        for p in self._get_processes():
-            p.start()
+        for node in chain(*self.nodes):
+            node._pool.run_async()
 
     def visualize(
             self,

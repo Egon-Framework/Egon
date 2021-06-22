@@ -125,7 +125,7 @@ class Input(AbstractConnector):
 
         timeout = timeout or float('inf')
         while timeout > 0:
-            if self.is_connected and not self.parent_node.expecting_data():
+            if self.is_connected and not self.parent_node.expecting_data:
                 return KillSignal
 
             try:
@@ -142,7 +142,7 @@ class Input(AbstractConnector):
         Automatically exits once no more data is expected from upstream nodes.
         """
 
-        while self.parent_node.expecting_data():
+        while self.parent_node.expecting_data:
             data = self.get()
             if data is KillSignal:
                 return

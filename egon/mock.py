@@ -4,17 +4,24 @@ for a pre-defined number of seconds.
 """
 
 from egon import nodes
+from egon._utils import MPool
 from egon.connectors import Input, Output
-from egon.pipeline import Pipeline
 
 
-class MockSource(nodes.Source):
+class Mock:
+    def run_mock(self) -> None:
+        self._pool: MPool
+        self._pool.start()
+        self._pool.join()
+
+
+class MockSource(Mock, nodes.Source):
     """A ``Source`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, load_data: list = None, num_processes=0) -> None:
+    def __init__(self, load_data: list = None) -> None:
         self.output = Output()
         self.load_data = load_data or []
-        super(MockSource, self).__init__(num_processes=num_processes)
+        super(MockSource, self).__init__(num_processes=1)
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -23,13 +30,13 @@ class MockSource(nodes.Source):
             self.output.put(x)
 
 
-class MockTarget(nodes.Target):
+class MockTarget(Mock, nodes.Target):
     """A ``Target`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, num_processes=0) -> None:
+    def __init__(self) -> None:
         self.input = Input()
         self.accumulated_data = []
-        super(MockTarget, self).__init__(num_processes=num_processes)
+        super(MockTarget, self).__init__(num_processes=1)
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -38,36 +45,16 @@ class MockTarget(nodes.Target):
             self.accumulated_data.append(x)
 
 
-class MockNode(nodes.Node):
+class MockNode(Mock, nodes.Node):
     """A ``Node`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, num_processes=0) -> None:
+    def __init__(self) -> None:
         self.output = Output()
         self.input = Input()
-        super(MockNode, self).__init__(num_processes=num_processes)
+        super(MockNode, self).__init__(num_processes=1)
 
     def action(self) -> None:  # pragma: no cover
         """Placeholder function to satisfy requirements of abstract parent"""
 
         for x in self.input.iter_get():
             self.output.put(x)
-
-
-class MockPipeline(Pipeline):
-    """A mock pipeline with a root and a leaf"""
-
-    def __init__(self) -> None:
-        self.source = MockSource(num_processes=2)
-        self.target = MockTarget()
-        self.source.output.connect(self.target.input)
-        super().__init__()
-
-    def all_alive(self) -> bool:
-        """Return if all processes managed by the pipeline are alive"""
-
-        return all(p.is_alive() for p in self._get_processes())
-
-    def any_alive(self) -> bool:
-        """Return if any process managed by the pipeline are alive"""
-
-        return any(p.is_alive() for p in self._get_processes())

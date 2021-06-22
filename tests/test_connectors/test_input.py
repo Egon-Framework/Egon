@@ -13,7 +13,7 @@ class InputGet(TestCase):
     def test_error_on_non_positive_refresh(self) -> None:
         """Test a ValueError is raised when ``refresh_interval`` is not a positive number"""
 
-        target = MockTarget(num_processes=0)  # Run node in current process only
+        target = MockTarget()  # Run node in current process only
         with self.assertRaises(ValueError):
             target.input.get(timeout=15, refresh_interval=0)
 
@@ -23,7 +23,7 @@ class InputGet(TestCase):
     def test_returns_queue_value(self) -> None:
         """Test the ``get`` method retrieves data from the underlying queue"""
 
-        target = MockTarget(num_processes=0)  # Run node in current process only
+        target = MockTarget()  # Run node in current process only
         test_val = 'test_val'
         target.input._queue.put(test_val)
         self.assertEqual(target.input.get(timeout=1000), test_val)
@@ -31,18 +31,18 @@ class InputGet(TestCase):
     def test_kill_signal_on_finished_parent_node(self) -> None:
         """Test a kill signal is returned if the parent node if finished"""
 
-        source = MockSource(num_processes=0)
-        target = MockTarget(num_processes=0)  # Run node in current process only
+        source = MockSource()
+        target = MockTarget()  # Run node in current process only
         source.output.connect(target.input)
         source._process_finished = True
 
-        self.assertFalse(target.expecting_data())
+        self.assertFalse(target.expecting_data)
         self.assertIs(target.input.get(timeout=15), KillSignal)
 
     def test_timeout_raises_timeout_error(self) -> None:
         """Test a ``TimeoutError`` is raise on timeout"""
 
-        target = MockTarget(num_processes=0)
+        target = MockTarget()
         with self.assertRaises(TimeoutError):
             target.input.get(timeout=1)
 
