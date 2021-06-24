@@ -1,14 +1,12 @@
 """The ``nodes`` module supports the construction of individual pipeline nodes.
 ``Source``, ``Node``,  and ``Target`` classes are provided for creating nodes
-that produce, analyze, and costume data respectively.
+that produce, analyze, and consume data respectively.
 """
 
 from __future__ import annotations
 
 import abc
-import inspect
 from abc import ABC
-from copy import copy
 from itertools import chain
 from typing import Collection, List, Tuple, Union
 
@@ -16,7 +14,7 @@ from . import connectors, exceptions
 from ._utils import MPool
 
 
-def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractConnector]) -> List:
+def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractConnector]) -> Tuple:
     """Return the parent nodes from a list of ``Connector`` objects
     
     Args:
@@ -26,11 +24,7 @@ def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractCon
         A list of node instances
     """
 
-    nodes = []
-    for c in connector_list:
-        nodes.extend(p.parent_node for p in c.get_partners())
-
-    return nodes
+    return tuple(p.parent_node for c in connector_list for p in c.partners)
 
 
 class AbstractNode(abc.ABC):
@@ -46,33 +40,60 @@ class AbstractNode(abc.ABC):
         self._inputs = []
         self._outputs = []
         for connector in self._get_attrs(connectors.AbstractConnector):
-            connector._node = self
+            connector._node = self  # Make the connector aware of its parent node
             if isinstance(connector, connectors.Input):
                 self._inputs.append(connector)
 
             else:  # Assume all other connectors are outputs
                 self._outputs.append(connector)
 
-    @property
-    def connectors(self) -> Tuple[List[connectors.Input], List[connectors.Output]]:
-        """Return a list of all connectors associated with the node
+        self._inputs = tuple(self._inputs)
+        self._outputs = tuple(self._outputs)
+
+    def _get_attrs(self, attr_type=None) -> List:
+        """Return a list of instance attributes matching the given type
+
+        All class attributes are ignored.
+
+        Args:
+            attr_type: The object type to search for
 
         Returns:
-            A list of Inout and Output connectors
+            A list of attributes with type ``attr_type``
         """
 
-        return copy(self._inputs), copy(self._outputs)
+        attr_list = []
+        ignore = dir(self.__class__)
+
+        for attr_name in dir(self):
+            if (not attr_name.startswith('_')) and (attr_name not in ignore):
+                attr = getattr(self, attr_name)
+                if isinstance(attr, attr_type):
+                    attr_list.append(attr)
+
+        return attr_list
 
     @property
-    def node_finished(self) -> bool:
-        """Return whether all node processes have finished processing data"""
+    def connectors(self) -> Tuple[Tuple[connectors.Input, ...], Tuple[connectors.Output, ...]]:
+        """Return tuples with all input and output connectors associated with the node
 
-        # Check that all forked processes are finished, including the current process
-        # Checking the current process is necessary in case the node is run in Main
-        if self.num_processes == 0:
-            return self._process_finished
+        Returns:
+            A tuple of Input connectors and a tuple of Output connectors
+        """
 
-        return all(self._states.values())
+        return self._inputs, self._outputs
+
+    @property
+    def upstream_nodes(self) -> Tuple[Union[Source, Node]]:
+        """Returns a list of nodes that are upstream from the current node"""
+
+        return _get_nodes_from_connectors(self._get_attrs(connectors.Input))
+
+    @property
+    def downstream_nodes(self) -> Tuple[Union[Node, Target]]:
+        """Returns a list of nodes that are downstream from the current node"""
+
+        return _get_nodes_from_connectors(self._get_attrs(connectors.Output))
 
     @abc.abstractmethod
     def validate(self) -> None:
@@ -94,34 +115,12 @@ class AbstractNode(abc.ABC):
                 raise exceptions.MissingConnectionError(
                     f'Connector {conn} does not have an established connection (Node: {conn.parent_node})')
 
-    def _get_attrs(self, attr_type=None) -> List:
-        """Return a list of instance attributes matching the given type
-
-        Args:
-            attr_type: The object type to search for
-
-        Returns:
-            A list of attributes of type ``attr_type``
-        """
-
-        return [getattr(self, a[0]) for a in inspect.getmembers(self, lambda a: isinstance(a, attr_type))]
-
-    def upstream_nodes(self) -> List[Union[Source, Node]]:
-        """Returns a list of nodes that are upstream from the current node"""
-
-        return _get_nodes_from_connectors(self._get_attrs(connectors.Input))
-
-    def downstream_nodes(self) -> List[Union[Node, Target]]:
-        """Returns a list of nodes that are downstream from the current node"""
-
-        return _get_nodes_from_connectors(self._get_attrs(connectors.Output))
-
-    def setup(self) -> None:
-        """Setup tasks called before running ``action``"""
-
     @abc.abstractmethod
     def action(self) -> None:
         """The primary analysis task performed by this node"""
+
+    def setup(self) -> None:
+        """Setup tasks called before running ``action``"""
 
     def teardown(self) -> None:
         """Teardown tasks called after running ``action``"""
@@ -135,10 +134,13 @@ class AbstractNode(abc.ABC):
         self.setup()
         self.action()
         self.teardown()
-        self._process_finished = True
 
-    @property
-    def expecting_data(self) -> bool:
+    def is_finished(self) -> bool:
+        """Return whether all node processes have finished processing data"""
+
+        return self._pool.is_finished()
+
+    def is_expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
 
         for input_connector in self._get_attrs(connectors.Input):

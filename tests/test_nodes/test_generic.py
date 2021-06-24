@@ -52,9 +52,9 @@ class TreeNavigation(TestCase):
 
 
 class ExpectingData(TestCase):
-    """Tests for the ``expecting_data`` function
+    """Tests for the ``is_expecting_data`` function
 
-    The ``expecting_data`` function combines two booleans.
+    The ``is_expecting_data`` function combines two booleans.
     This class evaluates all four squares of the corresponding truth table
     """
 
@@ -70,24 +70,24 @@ class ExpectingData(TestCase):
         """Test the return is False for a EMPTY queue and a FINISHED PARENT node"""
 
         self.root._process_finished = True
-        self.assertFalse(self.node.expecting_data)
+        self.assertFalse(self.node.is_expecting_data)
 
     def test_true_if_input_queue_has_data(self) -> None:
         """Test the return is True for a NOT EMPTY queue and a FINISHED PARENT node"""
 
         self.root._process_finished = True
         self.node.input._queue.put(5)
-        self.assertTrue(self.node.expecting_data)
+        self.assertTrue(self.node.is_expecting_data)
 
     def test_true_if_parent_is_running(self) -> None:
         """Test the return is True for a EMPTY queue and a NOT FINISHED PARENT node"""
 
         self.root._process_finished = False
-        self.assertTrue(self.node.expecting_data)
+        self.assertTrue(self.node.is_expecting_data)
 
     def test_true_if_input_queue_has_data_and_parent_is_running(self) -> None:
         """Test the return is True for a NOT EMPTY queue and a NOT FINISHED PARENT node"""
 
         self.root._process_finished = False
         self.node.input._queue.put(5)
-        self.assertTrue(self.node.expecting_data)
+        self.assertTrue(self.node.is_expecting_data)

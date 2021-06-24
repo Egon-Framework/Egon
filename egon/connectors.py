@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import multiprocessing as mp
 from queue import Empty
-from typing import Any, List, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Tuple
 
 from ._utils import KillSignal, ObjectCollection
 from .exceptions import MissingConnectionError, OverwriteConnectionError
@@ -19,10 +19,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class AbstractConnector:
-    """Exposes select functionality from an underlying ``Queue`` object"""
+    """Adds signal/slot style functionality to an underlying ``Queue`` object"""
 
     def __init__(self, name: str = None) -> None:
-        """Queue-like object for passing data between nodes and / or parallel processes
+        """Queue-like object for passing data between nodes
 
         Args:
             name: Optional human readable name for the connector object
@@ -39,21 +39,18 @@ class AbstractConnector:
         return self._node
 
     @property
+    def partners(self) -> Tuple:
+        """Return a tuple of connectors that are connected to this instance"""
+
+        return tuple(self._connected_partners)
+
     def is_connected(self) -> bool:
         """Return whether the connector has any established connections"""
 
         return bool(self._connected_partners)
 
-    def get_partners(self) -> List:
-        """Return a list of connectors that are connected to this instance"""
-
-        return list(self._connected_partners)
-
     def __str__(self) -> str:  # pragma: no cover
-        return f'<{self.__repr__()} object at {hex(id(self))}>'
-
-    def __repr__(self) -> str:  # pragma: no cover
-        return f'{self.__class__.__name__}(name={self.name})'
+        return f'<{self.__class__.__name__}(name={self.name}) object at {hex(id(self))}>'
 
 
 class Input(AbstractConnector):
@@ -71,12 +68,12 @@ class Input(AbstractConnector):
         self._maxsize = maxsize
         self._queue = mp.Queue(maxsize=maxsize)
 
-    def empty(self) -> bool:
+    def is_empty(self) -> bool:
         """Return if the connection queue is empty"""
 
         return self._queue.empty()
 
-    def full(self) -> bool:
+    def is_full(self) -> bool:
         """Return if the connection queue is full"""
 
         return self._queue.full()
@@ -98,11 +95,10 @@ class Input(AbstractConnector):
 
     @maxsize.setter
     def maxsize(self, maxsize: int) -> None:
-        """Replaces the underlying queue with a new instance and updated
-        connected outputs to point at that new instance.
-        """
+        # Replaces the underlying queue with a new instance and updated
+        # connected outputs to point at that new instance.
 
-        if not self.empty():
+        if not self.is_empty():
             raise RuntimeError('Cannot change maximum connector size when the connector is not empty.')
 
         self._queue = mp.Queue(maxsize=maxsize)
@@ -125,7 +121,7 @@ class Input(AbstractConnector):
 
         timeout = timeout or float('inf')
         while timeout > 0:
-            if self.is_connected and not self.parent_node.expecting_data:
+            if self.is_connected and not self.parent_node.is_expecting_data:
                 return KillSignal
 
             try:
@@ -142,7 +138,7 @@ class Input(AbstractConnector):
         Automatically exits once no more data is expected from upstream nodes.
         """
 
-        while self.parent_node.expecting_data:
+        while self.parent_node.is_expecting_data:
             data = self.get()
             if data is KillSignal:
                 return
@@ -173,7 +169,7 @@ class Output(AbstractConnector):
         if type(connector) is type(self):
             raise ValueError('Cannot join together two connection objects of the same type.')
 
-        if connector in self.get_partners():
+        if connector in self.partners:
             raise OverwriteConnectionError('The given connectors are already connected together.')
 
         # Once a connection is established between two connectors, they share an internal queue
@@ -183,7 +179,7 @@ class Output(AbstractConnector):
     def disconnect(self, connector: Input) -> None:
         """Disconnect any established connections"""
 
-        if connector not in self.get_partners():
+        if connector not in self.partners:
             raise MissingConnectionError(f'Output connector is not connected to the given connector: {connector}')
 
         connector._connected_partners.remove(self)
@@ -203,5 +199,5 @@ class Output(AbstractConnector):
         if not self.is_connected and raise_missing_connection:
             raise MissingConnectionError('Output connector is not connected to any input connectors.')
 
-        for partner in self.get_partners():
+        for partner in self.partners:
             partner._queue.put(x)

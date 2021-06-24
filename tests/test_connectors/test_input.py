@@ -36,7 +36,7 @@ class InputGet(TestCase):
         source.output.connect(target.input)
         source._process_finished = True
 
-        self.assertFalse(target.expecting_data)
+        self.assertFalse(target.is_expecting_data)
         self.assertIs(target.input.get(timeout=15), KillSignal)
 
     def test_timeout_raises_timeout_error(self) -> None:
