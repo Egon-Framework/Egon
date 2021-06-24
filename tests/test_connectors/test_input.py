@@ -26,7 +26,9 @@ class InputGet(TestCase):
         target = MockTarget()  # Run node in current process only
         test_val = 'test_val'
         target.input._queue.put(test_val)
-        self.assertEqual(target.input.get(timeout=1000), test_val)
+
+        time.sleep(1)
+        self.assertEqual(test_val, target.input.get(timeout=1000))
 
     def test_kill_signal_on_finished_parent_node(self) -> None:
         """Test a kill signal is returned if the parent node if finished"""
@@ -34,9 +36,10 @@ class InputGet(TestCase):
         source = MockSource()
         target = MockTarget()  # Run node in current process only
         source.output.connect(target.input)
-        source._process_finished = True
+        source.run_mock()
+        target.run_mock()
 
-        self.assertFalse(target.is_expecting_data)
+        self.assertFalse(target.is_expecting_data())
         self.assertIs(target.input.get(timeout=15), KillSignal)
 
     def test_timeout_raises_timeout_error(self) -> None:
@@ -68,7 +71,7 @@ class InputIterGet(TestCase):
         self.assertEqual(next(self.target.input.iter_get()), test_val)
 
 
-class MaxQueueSize(TestCase):
+class MaxSize(TestCase):
     """Tests the setting/getting of the maximum size for the underlying queue"""
 
     def setUp(self) -> None:
@@ -116,20 +119,20 @@ class QueueProperties(TestCase):
     def test_full_state(self) -> None:
         """Test the ``full`` method returns the state of the queue"""
 
-        self.assertFalse(self.connector.full())
+        self.assertFalse(self.connector.is_full())
         self.connector._queue.put(1)
-        self.assertTrue(self.connector.full())
+        self.assertTrue(self.connector.is_full())
 
     def test_empty_state(self) -> None:
         """Test the ``empty`` method returns the state of the queue"""
 
-        self.assertTrue(self.connector.empty())
+        self.assertTrue(self.connector.is_empty())
         self.connector._queue.put(1)
 
-        # The value of Queue.empty() updates asynchronously
+        # The value of Queue.is_empty() updates asynchronously
         time.sleep(1)
 
-        self.assertFalse(self.connector.empty())
+        self.assertFalse(self.connector.is_empty())
 
 
 class InputInstanceConnections(TestCase):

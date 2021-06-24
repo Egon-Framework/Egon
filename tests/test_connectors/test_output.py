@@ -1,6 +1,5 @@
 """Tests the functionality of ``Output`` connector objects."""
 
-from time import sleep
 from unittest import TestCase
 
 from egon import exceptions
@@ -35,28 +34,6 @@ class DataPut(TestCase):
     def test_error_override() -> None:
         Output().put(5, raise_missing_connection=False)
 
-    def test_multiple_connection_support(self):
-        """Test output connectors support sending data to multiple input connectors"""
-
-        # Create one node to output data and two to accept it
-        test_data = [1, 2, 3]
-        source = MockSource(test_data)
-        target_a = MockTarget()
-        target_b = MockTarget()
-
-        # Connect two outputs to the same input
-        source.output.connect(target_a.input)
-        source.output.connect(target_b.input)
-        source.execute()
-        sleep(1)  # Give the queue a chance to update
-
-        # Both inputs should have received the same data from the output
-        target_a.execute()
-        self.assertListEqual(test_data, target_a.accumulated_data)
-
-        target_b.execute()
-        self.assertListEqual(test_data, target_b.accumulated_data)
-
 
 class InstanceConnections(TestCase):
     """Test the connection of generic connector objects to other"""
@@ -68,7 +45,7 @@ class InstanceConnections(TestCase):
         self.output_connector = Output()
 
     def test_error_on_connection_to_same_type(self) -> None:
-        """An error is raised when connecting two inputs together"""
+        """An error is raised when connecting two outputs together"""
 
         with self.assertRaises(ValueError):
             self.output_connector.connect(Output())
@@ -94,9 +71,9 @@ class InstanceDisconnect(TestCase):
         """Test calling disconnect from one connector results in both connectors being disconnected"""
 
         self.output.disconnect(self.input)
-        self.assertNotIn(self.output, self.input.get_partners())
+        self.assertNotIn(self.output, self.input.partners)
 
-    def test_error_if_not_connected(self):
+    def test_error_if_not_connected(self) -> None:
         """Test an error is raised when disconnecting a connector that is not connected"""
 
         with self.assertRaises(MissingConnectionError):

@@ -43,7 +43,7 @@ class ProcessDiscovery(TestCase):
 
         pipeline = MockPipeline()
         expected_count = pipeline.source.num_processes + pipeline.target.num_processes
-        self.assertEqual(expected_count, pipeline.num_processes())
+        self.assertEqual(expected_count, pipeline.num_processes)
 
 
 class PipelineValidation(TestCase):

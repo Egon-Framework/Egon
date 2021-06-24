@@ -11,14 +11,14 @@ import multiprocessing as mp
 from queue import Empty
 from typing import Any, Optional, TYPE_CHECKING, Tuple
 
-from ._utils import KillSignal, ObjectCollection
+from .utils import KillSignal, ObjectCollection
 from .exceptions import MissingConnectionError, OverwriteConnectionError
 
 if TYPE_CHECKING:  # pragma: no cover
     from .nodes import AbstractNode
 
 
-class AbstractConnector:
+class BaseConnector:
     """Adds signal/slot style functionality to an underlying ``Queue`` object"""
 
     def __init__(self, name: str = None) -> None:
@@ -53,7 +53,7 @@ class AbstractConnector:
         return f'<{self.__class__.__name__}(name={self.name}) object at {hex(id(self))}>'
 
 
-class Input(AbstractConnector):
+class Input(BaseConnector):
     """Handles the input of data into a pipeline node"""
 
     def __init__(self, name: str = None, maxsize: int = 0) -> None:
@@ -121,7 +121,7 @@ class Input(AbstractConnector):
 
         timeout = timeout or float('inf')
         while timeout > 0:
-            if self.is_connected and not self.parent_node.is_expecting_data:
+            if self.is_connected and not self.parent_node.is_expecting_data():
                 return KillSignal
 
             try:
@@ -138,7 +138,7 @@ class Input(AbstractConnector):
         Automatically exits once no more data is expected from upstream nodes.
         """
 
-        while self.parent_node.is_expecting_data:
+        while self.parent_node.is_expecting_data():
             data = self.get()
             if data is KillSignal:
                 return
@@ -146,7 +146,7 @@ class Input(AbstractConnector):
             yield data
 
 
-class Output(AbstractConnector):
+class Output(BaseConnector):
     """Handles the output of data from a pipeline node"""
 
     def __init__(self, name: str = None) -> None:
@@ -196,7 +196,7 @@ class Output(AbstractConnector):
             MissingConnectionError: If trying to put data into an output that isn't connected to an input
         """
 
-        if not self.is_connected and raise_missing_connection:
+        if not self.is_connected() and raise_missing_connection:
             raise MissingConnectionError('Output connector is not connected to any input connectors.')
 
         for partner in self.partners:
