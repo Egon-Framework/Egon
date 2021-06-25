@@ -1,7 +1,9 @@
+"""Tests for the ``MPool`` class"""
+
 from time import sleep
 from unittest import TestCase
 
-from egon.utils import MPool
+from egon.nodes import MPool
 
 
 def target_func() -> None:
@@ -11,7 +13,7 @@ def target_func() -> None:
 
 
 class ProcessAllocation(TestCase):
-    """Test ``Node`` instances fork the correct number of processes"""
+    """Test instances fork the correct number of processes"""
 
     def setUp(self) -> None:
         self.num_processes = 4
@@ -37,6 +39,7 @@ class ProcessAllocation(TestCase):
 
 
 class Execution(TestCase):
+    """Tests for the starting, running, and stopping of allocated processes"""
 
     def test_pool_is_finished_after_execution(self) -> None:
         """Test the ``is_finished`` property is updated after the pool executes"""
@@ -57,5 +60,7 @@ class Execution(TestCase):
         pool.kill()
         pool.join()
 
-        self.assertTrue(pool._processes[0].exitcode < 0, f'Process not ended by termination signal ({pool._processes[0].exitcode})')
         self.assertFalse(pool.is_finished())
+        self.assertTrue(
+            pool._processes[0].exitcode < 0,
+            f'Process not ended by termination signal ({pool._processes[0].exitcode})')

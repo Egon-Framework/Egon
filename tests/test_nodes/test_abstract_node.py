@@ -34,21 +34,23 @@ class TreeNavigation(TestCase):
         """Create a tree of ``MockNode`` instances"""
 
         self.root = mock.MockSource()
-        self.internal_node = mock.MockNode()
-        self.leaf = mock.MockTarget()
+        self.inline = mock.MockNode()
+        self.target = mock.MockTarget()
 
-        self.root.output.connect(self.internal_node.input)
-        self.internal_node.output.connect(self.leaf.input)
+        self.root.output.connect(self.inline.input)
+        self.inline.output.connect(self.target.input)
 
     def test_upstream_nodes(self) -> None:
         """Test the inline node resolves the correct parent node"""
 
-        self.assertEqual(self.root, self.internal_node.upstream_nodes[0])
+        self.assertEqual(self.root, self.inline.upstream_nodes[0])
+        self.assertEqual(self.inline, self.target.upstream_nodes[0])
 
     def test_downstream_nodes(self) -> None:
         """Test the inline node resolves the correct child node"""
 
-        self.assertEqual(self.leaf, self.internal_node.downstream_nodes[0])
+        self.assertEqual(self.inline, self.root.downstream_nodes[0])
+        self.assertEqual(self.target, self.inline.downstream_nodes[0])
 
 
 class ExpectingData(TestCase):
@@ -61,9 +63,8 @@ class ExpectingData(TestCase):
     def setUp(self) -> None:
         """Create a tree of ``MockNode`` instances"""
 
-        # Fork zero processes so we can control the node finished state as the state of the daemon process
-        self.root = mock.MockSource(num_processes=0)
-        self.node = mock.MockNode(num_processes=0)
+        self.root = mock.MockSource()
+        self.node = mock.MockNode()
         self.root.output.connect(self.node.input)
 
     def test_false_for_empty_queue_and_finished_parent(self) -> None:
