@@ -121,7 +121,7 @@ class Input(BaseConnector):
 
         timeout = timeout or float('inf')
         while timeout > 0:
-            if self.is_connected and not self.parent_node.is_expecting_data():
+            if self.parent_node and not self.parent_node.is_expecting_data():
                 return KillSignal
 
             try:
@@ -137,6 +137,9 @@ class Input(BaseConnector):
 
         Automatically exits once no more data is expected from upstream nodes.
         """
+
+        if self.parent_node is None:
+            raise MissingConnectionError('Cannot use ``iter_get`` for an ``Input`` not assigned to a parent node.')
 
         while self.parent_node.is_expecting_data():
             data = self.get()

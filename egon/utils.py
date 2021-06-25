@@ -1,6 +1,6 @@
 """Generic utility classes"""
 
-from typing import Any, Collection, Iterable, Optional
+from typing import Hashable, Collection, Iterable, Optional
 
 
 class KillSignal:
@@ -21,7 +21,7 @@ class ObjectCollection:
         self._object_list = list(set(data)) if data else []
         self._index_map = {o: i for i, o in enumerate(self._object_list)}
 
-    def add(self, obj: Any) -> None:
+    def add(self, obj: Hashable) -> None:
         """Add a hashable object to the collection
 
         Args:
@@ -36,7 +36,7 @@ class ObjectCollection:
         self._index_map[obj] = len(self._object_list)
         self._object_list.append(obj)
 
-    def remove(self, obj: Any) -> None:
+    def remove(self, obj: Hashable) -> None:
         """Remove an object from the collection
 
         Args:
@@ -59,7 +59,7 @@ class ObjectCollection:
     def __iter__(self) -> Iterable:
         return iter(self._object_list)
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: Hashable) -> bool:
         return item in self._object_list
 
     def __len__(self) -> int:

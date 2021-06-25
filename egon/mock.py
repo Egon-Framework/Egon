@@ -4,7 +4,7 @@ for a pre-defined number of seconds.
 """
 
 from egon import nodes
-from egon.utils import MPool
+from egon.nodes import MPool
 from egon.connectors import Input, Output
 
 
