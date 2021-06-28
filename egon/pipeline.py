@@ -114,7 +114,7 @@ class Pipeline:
         """Start all processes asynchronously"""
 
         for node in chain(*self.nodes):
-            node._pool.run_async()
+            node._pool.start()
 
     def visualize(
             self,

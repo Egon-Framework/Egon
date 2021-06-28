@@ -1,8 +1,9 @@
 """Tests for the connection of multiple inputs and outputs together"""
-
+from time import sleep
 from unittest import TestCase
 
 from egon.connectors import Input, Output
+from egon.mock import MockSource, MockTarget
 
 
 class MultiplePartnerMapping(TestCase):
@@ -33,7 +34,7 @@ class MultiplePartnerMapping(TestCase):
 
 
 class MultiplePartnerDataRouting(TestCase):
-    def test_multiple_connection_support(self):
+    def test_multiple_connection_support(self) -> None:
         """Test output connectors support sending data to multiple input connectors"""
 
         # Create one node to output data and two to accept it
