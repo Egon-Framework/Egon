@@ -50,7 +50,13 @@ class InputIterGet(TestCase):
     """Test iteration behavior of the ``iter_get`` method"""
 
     def setUp(self) -> None:
-        self.input_connector = Input()
+        """Create an input connector that is assigned to a parent node
+
+        The input connector must be assigned to a parent node, otherwise
+        ``iter_get`` raises an error.
+        """
+
+        self.input_connector = MockTarget().input
 
     def test_raises_stop_iteration_on_kill_signal(self) -> None:
         """Test the iterator exits once it reaches a KillSignal object"""
@@ -62,15 +68,16 @@ class InputIterGet(TestCase):
     def test_raises_missing_connection_with_no_parent(self) -> None:
         """Test the iterator exits if input has no paren"""
 
-        input_connector = Input()
         with self.assertRaises(MissingConnectionError):
-            next(input_connector.iter_get())
+            next(Input().iter_get())
 
     def test_returns_queue_value(self) -> None:
         """Test the ``get`` method retrieves data from the underlying queue"""
 
         test_val = 'test_val'
         self.input_connector._queue.put(test_val)
+        time.sleep(1)  # Give queue time to update
+
         self.assertEqual(next(self.input_connector.iter_get()), test_val)
 
 
