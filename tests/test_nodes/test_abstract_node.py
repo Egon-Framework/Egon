@@ -4,6 +4,8 @@ from functools import partial
 from unittest import TestCase
 
 from egon import mock
+from egon.exceptions import MissingConnectionError
+from egon.mock import MockSource
 
 
 class Execution(TestCase):
@@ -90,3 +92,13 @@ class ExpectingData(TestCase):
 
         self.node.input._queue.put(5)
         self.assertTrue(self.node.is_expecting_data())
+
+
+class ConnectorValidation(TestCase):
+    """Test the validation of underlying connector objects"""
+
+    def test_missing_connection(self) -> None:
+        """Test a ``MissingConnectionError`` for an unconnected connector"""
+
+        with self.assertRaises(MissingConnectionError):
+            MockSource().validate()

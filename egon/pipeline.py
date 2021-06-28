@@ -60,12 +60,12 @@ class Pipeline:
         # Collect all of the processes assigned to each node
         processes = []
         for node in chain(*self.nodes):
-            processes.extend(node._processes)
+            processes.extend(node._pool._processes)
 
         return processes
 
     @property
-    def nodes(self) -> Tuple[List[nodes.Source], List[nodes.Node], List[nodes.Target]]:
+    def nodes(self) -> Tuple[Tuple[nodes.Source], Tuple[nodes.Node], Tuple[nodes.Target]]:
         """Return a list of all nodes in the pipeline
 
         Nodes are returned in an arbitrary order
@@ -74,7 +74,7 @@ class Pipeline:
             A list of nodes used to build the pipeline
         """
 
-        return copy(self._sources), copy(self._inlines), copy(self._targets)
+        return tuple(self._sources), tuple(self._inlines), tuple(self._targets)
 
     @property
     def connectors(self) -> Tuple[List[conn.Input], List[conn.Output]]:

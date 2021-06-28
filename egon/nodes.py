@@ -179,7 +179,7 @@ class AbstractNode(abc.ABC):
         """
 
         for conn in chain(*self.connectors):
-            if not conn.is_connected:
+            if not conn.is_connected():
                 raise exceptions.MissingConnectionError(
                     f'Connector {conn} does not have an established connection (Node: {conn.parent_node})')
 
