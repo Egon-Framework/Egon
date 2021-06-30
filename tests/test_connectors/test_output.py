@@ -1,74 +1,50 @@
 """Tests the functionality of ``Output`` connector objects."""
 
-from time import sleep
 from unittest import TestCase
 
 from egon import exceptions
 from egon.connectors import Input, Output
 from egon.exceptions import MissingConnectionError
-from egon.mock import MockSource, MockTarget
 
 
 class DataPut(TestCase):
-    """Test data storage in ``Output`` instances"""
-
-    def setUp(self) -> None:
-        """Define an ``Output`` instance"""
-
-        # Create a node with an output connector
-        self.source = MockSource()
-        self.target = MockTarget()
-        self.source.output.connect(self.target.input)
+    """Test data routing by ``Output`` instances"""
 
     def test_stores_value_in_queue(self) -> None:
-        """Test the ``put`` method retrieves data from the underlying queue"""
+        """Test the ``put`` method puts data into the underlying connected queue"""
+
+        # Create a node with an output connector
+        output = Output()
+        input = Input()
+        output.connect(input)
 
         test_val = 'test_val'
-        self.source.output.put(test_val)
-        self.assertEqual(self.target.input._queue.get(), test_val)
+        output.put(test_val)
+        self.assertEqual(input._queue.get(), test_val)
 
     def test_error_if_unconnected(self) -> None:
+        """Test ``put`` raises an error if the output is not connected"""
+
         with self.assertRaises(MissingConnectionError):
             Output().put(5)
 
     @staticmethod
     def test_error_override() -> None:
+        """Test the optional suppression of errors for unconnected outputs"""
+
         Output().put(5, raise_missing_connection=False)
 
-    def test_multiple_connection_support(self):
-        """Test output connectors support sending data to multiple input connectors"""
 
-        # Create one node to output data and two to accept it
-        test_data = [1, 2, 3]
-        source = MockSource(test_data)
-        target_a = MockTarget()
-        target_b = MockTarget()
-
-        # Connect two outputs to the same input
-        source.output.connect(target_a.input)
-        source.output.connect(target_b.input)
-        source.execute()
-        sleep(1)  # Give the queue a chance to update
-
-        # Both inputs should have received the same data from the output
-        target_a.execute()
-        self.assertListEqual(test_data, target_a.accumulated_data)
-
-        target_b.execute()
-        self.assertListEqual(test_data, target_b.accumulated_data)
-
-
-class InstanceConnections(TestCase):
+class InstanceConnect(TestCase):
     """Test the connection of generic connector objects to other"""
 
     def setUp(self) -> None:
-        """Define a generic ``Connector`` instance"""
 
         self.input_connector = Input()
         self.output_connector = Output()
 
     def test_error_on_connection_to_same_type(self) -> None:
-        """An error is raised when connecting two inputs together"""
+        """Test an error is raised when connecting two outputs together"""
 
         with self.assertRaises(ValueError):
             self.output_connector.connect(Output())
@@ -91,12 +67,17 @@ class InstanceDisconnect(TestCase):
         self.output.connect(self.input)
 
     def test_both_connectors_are_disconnected(self) -> None:
-        """Test calling disconnect from one connector results in both connectors being disconnected"""
+        """Test both connectors are no longer listed as partners"""
+
+        self.assertTrue(self.input.is_connected())
+        self.assertTrue(self.output.is_connected())
 
         self.output.disconnect(self.input)
-        self.assertNotIn(self.output, self.input.get_partners())
+        self.assertNotIn(self.output, self.input.partners)
+        self.assertFalse(self.input.is_connected())
+        self.assertFalse(self.output.is_connected())
 
-    def test_error_if_not_connected(self):
+    def test_error_if_not_connected(self) -> None:
         """Test an error is raised when disconnecting a connector that is not connected"""
 
         with self.assertRaises(MissingConnectionError):

@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 
-from egon._utils import ObjectCollection
+from egon.utils import ObjectCollection
 
 
 class Add(TestCase):

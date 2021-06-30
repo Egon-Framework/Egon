@@ -1,23 +1,22 @@
 """The ``nodes`` module supports the construction of individual pipeline nodes.
 ``Source``, ``Node``,  and ``Target`` classes are provided for creating nodes
-that produce, analyze, and costume data respectively.
+that produce, analyze, and consume data respectively.
 """
 
 from __future__ import annotations
 
 import abc
-import inspect
 import multiprocessing as mp
 from abc import ABC
-from copy import copy
 from itertools import chain
 from time import sleep
-from typing import Collection, List, Tuple, Union
+from typing import Collection
+from typing import List, Tuple, Union
 
 from . import connectors, exceptions
 
 
-def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractConnector]) -> List:
+def _get_nodes_from_connectors(connector_list: Collection[connectors.BaseConnector]) -> Tuple:
     """Return the parent nodes from a list of ``Connector`` objects
     
     Args:
@@ -27,11 +26,73 @@ def _get_nodes_from_connectors(connector_list: Collection[connectors.AbstractCon
         A list of node instances
     """
 
-    nodes = []
-    for c in connector_list:
-        nodes.extend(p.parent_node for p in c.get_partners())
+    return tuple(p.parent_node for c in connector_list for p in c.partners)
 
-    return nodes
+
+class MPool:
+    """A pool of processes assigned to a single target function"""
+
+    def __init__(self, num_processes: int, target: callable) -> None:
+        """Create a collection of processes assigned to execute a given callable
+
+        Args:
+            num_processes: The number of processes to allocate
+            target: The function to be executed by the allocated processes
+        """
+
+        if num_processes <= 0:
+            raise ValueError(f'Cannot instantiate less than 1 forked processes (got {num_processes}).')
+
+        # Note that we use the memory address of the processes and not the
+        # ``pid`` attribute. ``pid`` is only set after the process is started.
+        self._processes = [mp.Process(target=self._call_target) for _ in range(num_processes)]
+        self._states = mp.Manager().dict({id(p): False for p in self._processes})
+        self._target = target
+
+    def _call_target(self) -> None:  # pragma: nocover, Called from forked process
+        """Wrapper for calling the pool's target function"""
+
+        self._target()
+
+        # Mark the current process as being finished
+        sleep(.5)  # Allow any last minute calls to finish before changing the state
+        self._states[id(mp.current_process())] = True
+
+    @property
+    def num_processes(self) -> int:
+        """The number of processes assigned to the pool"""
+
+        return len(self._processes)
+
+    @property
+    def target(self) -> callable:
+        """The callable to be executed by the pool"""
+
+        return self._target
+
+    def is_finished(self) -> bool:
+        """Return whether all processes have finished executing"""
+
+        # Check that all forked processes are finished
+        return all(self._states.values())
+
+    def start(self) -> None:
+        """Start all processes asynchronously"""
+
+        for p in self._processes:
+            p.start()
+
+    def join(self) -> None:
+        """Wait for any running pool processes to finish running before continuing execution"""
+
+        for p in self._processes:
+            p.join()
+
+    def kill(self) -> None:
+        """Kill all running processes without trying to exit gracefully"""
+
+        for p in self._processes:
+            p.terminate()
 
 
 class AbstractNode(abc.ABC):
@@ -40,81 +101,67 @@ class AbstractNode(abc.ABC):
     def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
+        self._pool = MPool(num_processes, self.execute)
+        self.num_processes = self._pool.num_processes
         self.name = name or self.__class__.__name__
-        self._processes = []  # Populates when self.num_processes is assigned
-
-        self.num_processes = num_processes
-        self._current_process_state = False
 
         self._inputs = []
         self._outputs = []
-        for connector in self._get_attrs(connectors.AbstractConnector):
-            connector._node = self
+        for connector in self._get_attrs(connectors.BaseConnector):
+            connector._node = self  # Make the connector aware of its parent node
             if isinstance(connector, connectors.Input):
                 self._inputs.append(connector)
 
             else:  # Assume all other connectors are outputs
                 self._outputs.append(connector)
 
-    @property
-    def connectors(self) -> Tuple[List[connectors.Input], List[connectors.Output]]:
-        """Return a list of all connectors associated with the node
+        self._inputs = tuple(self._inputs)
+        self._outputs = tuple(self._outputs)
+
+    def _get_attrs(self, attr_type=None) -> List:
+        """Return a list of instance attributes matching the given type
+
+        All class attributes are ignored.
+
+        Args:
+            attr_type: The object type to search for
 
         Returns:
-            A list of Inout and Output connectors
+            A list of attributes with type ``attr_type``
         """
 
-        return copy(self._inputs), copy(self._outputs)
+        attr_list = []
+        ignore = dir(self.__class__)
+
+        for attr_name in dir(self):
+            if (not attr_name.startswith('_')) and (attr_name not in ignore):
+                attr = getattr(self, attr_name)
+                if isinstance(attr, attr_type):
+                    attr_list.append(attr)
+
+        return attr_list
 
     @property
-    def num_processes(self) -> int:
-        """The number of processes assigned to the current node"""
+    def connectors(self) -> Tuple[Tuple[connectors.Input, ...], Tuple[connectors.Output, ...]]:
+        """Return tuples with all input and output connectors associated with the node
 
-        return len(self._processes)
+        Returns:
+            A tuple of Input connectors and a tuple of Output connectors
+        """
 
-    @num_processes.setter
-    def num_processes(self, num_processes: int) -> None:
-        """The number of processes assigned to the current node"""
-
-        if num_processes < 0:
-            raise ValueError(f'Cannot instantiate a negative number of forked processes (got {num_processes}).')
-
-        if any(p.is_alive() for p in self._processes):
-            raise RuntimeError('Cannot change number of processes while node is running.')
-
-        # Note that we use the memory address of the processes and not the
-        # ``pid`` attribute. ``pid`` is only set after the process is started.
-        self._processes = [mp.Process(target=self.execute) for _ in range(num_processes)]
-        self._states = mp.Manager().dict({id(p): False for p in self._processes})
+        return self._inputs, self._outputs
 
     @property
-    def process_finished(self) -> bool:
-        """Return whether the current process has finished processing data"""
+    def upstream_nodes(self) -> Tuple[Union[Source, Node]]:
+        """Returns a list of nodes that are upstream from the current node"""
 
-        return self._process_finished
-
-    @property
-    def _process_finished(self) -> bool:
-        """Return whether the current process has finished processing data"""
-
-        # Use get in case called from a process not forked by the class __init__
-        return self._states.get(mp.current_process().pid, self._current_process_state)
-
-    @_process_finished.setter
-    def _process_finished(self, state: bool) -> None:
-        sleep(2)  # Allow any ``put`` calls to finish populating the queue
-        self._states[id(mp.current_process())] = self._current_process_state = state
+        return _get_nodes_from_connectors(self._get_attrs(connectors.Input))
 
     @property
-    def node_finished(self) -> bool:
-        """Return whether all node processes have finished processing data"""
+    def downstream_nodes(self) -> Tuple[Union[Node, Target]]:
+        """Returns a list of nodes that are downstream from the current node"""
 
-        # Check that all forked processes are finished, including the current process
-        # Checking the current process is necessary in case the node is run in Main
-        if self.num_processes == 0:
-            return self._process_finished
-
-        return all(self._states.values())
+        return _get_nodes_from_connectors(self._get_attrs(connectors.Output))
 
     @abc.abstractmethod
     def validate(self) -> None:
@@ -132,38 +179,16 @@ class AbstractNode(abc.ABC):
         """
 
         for conn in chain(*self.connectors):
-            if not conn.is_connected:
+            if not conn.is_connected():
                 raise exceptions.MissingConnectionError(
                     f'Connector {conn} does not have an established connection (Node: {conn.parent_node})')
-
-    def _get_attrs(self, attr_type=None) -> List:
-        """Return a list of instance attributes matching the given type
-
-        Args:
-            attr_type: The object type to search for
-
-        Returns:
-            A list of attributes of type ``attr_type``
-        """
-
-        return [getattr(self, a[0]) for a in inspect.getmembers(self, lambda a: isinstance(a, attr_type))]
-
-    def upstream_nodes(self) -> List[Union[Source, Node]]:
-        """Returns a list of nodes that are upstream from the current node"""
-
-        return _get_nodes_from_connectors(self._get_attrs(connectors.Input))
-
-    def downstream_nodes(self) -> List[Union[Node, Target]]:
-        """Returns a list of nodes that are downstream from the current node"""
-
-        return _get_nodes_from_connectors(self._get_attrs(connectors.Output))
-
-    def setup(self) -> None:
-        """Setup tasks called before running ``action``"""
 
     @abc.abstractmethod
     def action(self) -> None:
         """The primary analysis task performed by this node"""
+
+    def setup(self) -> None:
+        """Setup tasks called before running ``action``"""
 
     def teardown(self) -> None:
         """Teardown tasks called after running ``action``"""
@@ -177,21 +202,25 @@ class AbstractNode(abc.ABC):
         self.setup()
         self.action()
         self.teardown()
-        self._process_finished = True
 
-    def expecting_data(self) -> bool:
+    def is_finished(self) -> bool:
+        """Return whether all node processes have finished processing data"""
+
+        return self._pool.is_finished()
+
+    def is_expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream"""
 
         for input_connector in self._get_attrs(connectors.Input):
             # IMPORTANT: The order of the following code blocks is crucial
             # We check for any running upstream nodes first
-            for output_connector in input_connector.get_partners():
-                if not output_connector.parent_node.node_finished:
+            for output_connector in input_connector.partners:
+                if not output_connector.parent_node.is_finished():
                     return True
 
             # Check for any unprocessed data once we know there are no
             # nodes still populating any input queues
-            if not input_connector.empty():
+            if not input_connector.is_empty():
                 return True
 
         return False
@@ -243,7 +272,7 @@ class Target(AbstractNode, ABC):
         self._validate_connections()
 
 
-class Node(Target, Source, ABC):
+class Node(AbstractNode, ABC):
     """A pipeline process that can have any number of input or output streams"""
 
     def validate(self) -> None:

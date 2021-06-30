@@ -60,12 +60,12 @@ class Pipeline:
         # Collect all of the processes assigned to each node
         processes = []
         for node in chain(*self.nodes):
-            processes.extend(node._processes)
+            processes.extend(node._pool._processes)
 
         return processes
 
     @property
-    def nodes(self) -> Tuple[List[nodes.Source], List[nodes.Node], List[nodes.Target]]:
+    def nodes(self) -> Tuple[Tuple[nodes.Source], Tuple[nodes.Node], Tuple[nodes.Target]]:
         """Return a list of all nodes in the pipeline
 
         Nodes are returned in an arbitrary order
@@ -74,7 +74,7 @@ class Pipeline:
             A list of nodes used to build the pipeline
         """
 
-        return copy(self._sources), copy(self._inlines), copy(self._targets)
+        return tuple(self._sources), tuple(self._inlines), tuple(self._targets)
 
     @property
     def connectors(self) -> Tuple[List[conn.Input], List[conn.Output]]:
@@ -86,6 +86,7 @@ class Pipeline:
 
         return copy(self._inputs), copy(self._outputs)
 
+    @property
     def num_processes(self) -> int:
         """The number of processes forked by to the pipeline"""
 
@@ -106,19 +107,19 @@ class Pipeline:
     def wait_for_exit(self) -> None:
         """Wait for the pipeline to finish running before continuing execution"""
 
-        for p in self._get_processes():
-            p.join()
+        for node in chain(*self.nodes):
+            node._pool.join()
 
     def run_async(self) -> None:
         """Start all processes asynchronously"""
 
-        for p in self._get_processes():
-            p.start()
+        for node in chain(*self.nodes):
+            node._pool.start()
 
     def visualize(
             self,
-            host: str = os.getenv("HOST", "127.0.0.1"),
-            port: int = os.getenv("PORT", "8050"),
+            host: str = os.getenv("EGON_HOST", "127.0.0.1"),
+            port: int = os.getenv("EGON_PORT", "8050"),
             quiet: bool = False
     ) -> None:
         """Launch a server instance for monitoring the pipeline in real time

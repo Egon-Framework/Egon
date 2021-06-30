@@ -1,4 +1,6 @@
-from typing import Any, Collection, Iterable, Optional
+"""Generic utility classes"""
+
+from typing import Hashable, Collection, Iterable, Optional
 
 
 class KillSignal:
@@ -19,29 +21,29 @@ class ObjectCollection:
         self._object_list = list(set(data)) if data else []
         self._index_map = {o: i for i, o in enumerate(self._object_list)}
 
-    def add(self, x: Any) -> None:
+    def add(self, obj: Hashable) -> None:
         """Add a hashable object to the collection
 
         Args:
-            x: The object to add
+            obj: The object to add
         """
 
         # Exit if ``x`` is already in the collection
-        if x in self._index_map:
+        if obj in self._index_map:
             return
 
         # Add ``x`` to the end of the collection
-        self._index_map[x] = len(self._object_list)
-        self._object_list.append(x)
+        self._index_map[obj] = len(self._object_list)
+        self._object_list.append(obj)
 
-    def remove(self, x: Any) -> None:
+    def remove(self, obj: Hashable) -> None:
         """Remove an object from the collection
 
         Args:
-            x: The object to remove
+            obj: The object to remove
         """
 
-        index = self._index_map[x]
+        index = self._index_map[obj]
 
         # Swap element with last element so that removal from the list can be done in O(1) time
         size = len(self._object_list)
@@ -51,17 +53,17 @@ class ObjectCollection:
         # Update hash table for new index of last element
         self._index_map[last] = index
 
-        del self._index_map[x]
+        del self._index_map[obj]
         del self._object_list[-1]
 
     def __iter__(self) -> Iterable:
         return iter(self._object_list)
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: Hashable) -> bool:
         return item in self._object_list
 
     def __len__(self) -> int:
         return len(self._object_list)
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __str__(self) -> str:  # pragma: no cover
         return f'<Container({self._object_list})>'

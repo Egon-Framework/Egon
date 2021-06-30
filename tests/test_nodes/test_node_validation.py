@@ -30,7 +30,7 @@ class BaseTests:
             self.test_class.validate()
 
     def test_error_if_malformed(self) -> None:
-        """Test a malformed error is raised"""
+        """Test a malformed error is raised by the ``validate`` method"""
 
         self.test_class.input = Input()
         self.test_class.output = Output()

@@ -1,4 +1,4 @@
-"""Build a simple two node pipeline and test all input data makes it
+"""Build a simple two pipeline and test all input data makes it
 through to the end.
 """
 
@@ -22,6 +22,8 @@ def sending_node() -> float:
 
 @as_node
 def internal_node(x) -> float:
+    """Returns the input argument"""
+
     return x
 
 

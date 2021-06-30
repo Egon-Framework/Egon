@@ -1,81 +1,94 @@
-"""Tests the functionality of ``Input`` connector objects."""
+"""Tests for ``Input`` connector objects."""
 
 import time
 from unittest import TestCase
 
 from egon.connectors import Input, KillSignal
-from egon.mock import MockSource, MockTarget
+from egon.exceptions import MissingConnectionError
+from egon.mock import MockTarget
 
 
 class InputGet(TestCase):
     """Test data retrieval from ``Input`` instances"""
 
+    def setUp(self) -> None:
+        self.input_connector = Input()
+
     def test_error_on_non_positive_refresh(self) -> None:
         """Test a ValueError is raised when ``refresh_interval`` is not a positive number"""
 
-        target = MockTarget(num_processes=0)  # Run node in current process only
         with self.assertRaises(ValueError):
-            target.input.get(timeout=15, refresh_interval=0)
+            self.input_connector.get(timeout=15, refresh_interval=0)
 
         with self.assertRaises(ValueError):
-            target.input.get(timeout=15, refresh_interval=-1)
+            self.input_connector.get(timeout=15, refresh_interval=-1)
 
     def test_returns_queue_value(self) -> None:
         """Test the ``get`` method retrieves data from the underlying queue"""
 
-        target = MockTarget(num_processes=0)  # Run node in current process only
         test_val = 'test_val'
-        target.input._queue.put(test_val)
-        self.assertEqual(target.input.get(timeout=1000), test_val)
+        self.input_connector._queue.put(test_val)
 
-    def test_kill_signal_on_finished_parent_node(self) -> None:
-        """Test a kill signal is returned if the parent node if finished"""
-
-        source = MockSource(num_processes=0)
-        target = MockTarget(num_processes=0)  # Run node in current process only
-        source.output.connect(target.input)
-        source._process_finished = True
-
-        self.assertFalse(target.expecting_data())
-        self.assertIs(target.input.get(timeout=15), KillSignal)
+        time.sleep(1)
+        self.assertEqual(test_val, self.input_connector.get(timeout=1000))
 
     def test_timeout_raises_timeout_error(self) -> None:
         """Test a ``TimeoutError`` is raise on timeout"""
 
-        target = MockTarget(num_processes=0)
         with self.assertRaises(TimeoutError):
-            target.input.get(timeout=1)
+            self.input_connector.get(timeout=1)
+
+    def test_kill_signal_on_finished_parent_node(self) -> None:
+        """Test a kill signal is returned if the parent node is finished"""
+
+        target = MockTarget()
+        self.assertFalse(target.is_expecting_data())
+        self.assertIs(target.input.get(timeout=15), KillSignal)
 
 
 class InputIterGet(TestCase):
     """Test iteration behavior of the ``iter_get`` method"""
 
     def setUp(self) -> None:
-        self.target = MockTarget()
+        """Create an input connector that is assigned to a parent node
+
+        The input connector must be assigned to a parent node, otherwise
+        ``iter_get`` raises an error.
+        """
+
+        self.input_connector = MockTarget().input
 
     def test_raises_stop_iteration_on_kill_signal(self) -> None:
         """Test the iterator exits once it reaches a KillSignal object"""
 
-        self.target.input._queue.put(KillSignal)
+        self.input_connector._queue.put(KillSignal)
         with self.assertRaises(StopIteration):
-            next(self.target.input.iter_get())
+            next(self.input_connector.iter_get())
+
+    def test_raises_missing_connection_with_no_parent(self) -> None:
+        """Test the iterator exits if input has no paren"""
+
+        with self.assertRaises(MissingConnectionError):
+            next(Input().iter_get())
 
     def test_returns_queue_value(self) -> None:
         """Test the ``get`` method retrieves data from the underlying queue"""
 
         test_val = 'test_val'
-        self.target.input._queue.put(test_val)
-        self.assertEqual(next(self.target.input.iter_get()), test_val)
+        self.input_connector._queue.put(test_val)
+        time.sleep(1)  # Give queue time to update
+
+        self.assertEqual(next(self.input_connector.iter_get()), test_val)
 
 
-class MaxQueueSize(TestCase):
+class MaxSize(TestCase):
     """Tests the setting/getting of the maximum size for the underlying queue"""
 
     def setUp(self) -> None:
         self.connector = Input(maxsize=10)
 
-    def test_maxsize(self) -> None:
-        """Test the max queue size is set at __init__"""
+    def test_queue_matches_input(self) -> None:
+        """Test the max size of the underlying queue matches the max size of the Input"""
 
         self.assertEqual(self.connector._queue._maxsize, self.connector.maxsize)
 
@@ -94,7 +107,7 @@ class MaxQueueSize(TestCase):
         """Test a ``RuntimeError`` is raised when changing the size of a nonempty connector"""
 
         self.connector._queue.put(1)
-        time.sleep(2)  # Let the queue update
+        time.sleep(1)  # Let the queue update
 
         with self.assertRaises(RuntimeError):
             self.connector.maxsize += 1
@@ -116,41 +129,17 @@ class QueueProperties(TestCase):
     def test_full_state(self) -> None:
         """Test the ``full`` method returns the state of the queue"""
 
-        self.assertFalse(self.connector.full())
+        self.assertFalse(self.connector.is_full())
         self.connector._queue.put(1)
-        self.assertTrue(self.connector.full())
+        self.assertTrue(self.connector.is_full())
 
     def test_empty_state(self) -> None:
         """Test the ``empty`` method returns the state of the queue"""
 
-        self.assertTrue(self.connector.empty())
+        self.assertTrue(self.connector.is_empty())
         self.connector._queue.put(1)
 
-        # The value of Queue.empty() updates asynchronously
+        # The value of Queue.is_empty() updates asynchronously
         time.sleep(1)
 
-        self.assertFalse(self.connector.empty())
-
-
-class InputInstanceConnections(TestCase):
-    """Test the connection of generic connector objects to other"""
-
-    def test_multiple_output_support(self):
-        """Test inputs support the accumulation of data from multiple outputs"""
-
-        # Create two nodes to output data into a single receiving node
-        test_data = [1, 2, 3, 4, 5, 6]
-        source_1 = MockSource(test_data[:3])
-        source_2 = MockSource(test_data[3:])
-        target = MockTarget()
-
-        # Connect the two outputs to feed the same input
-        source_1.output.connect(target.input)
-        source_2.output.connect(target.input)
-
-        # Execute the nodes so data is passed through the connectors
-        source_1.execute()
-        source_2.execute()
-        target.execute()
-
-        self.assertCountEqual(test_data, target.accumulated_data)
+        self.assertFalse(self.connector.is_empty())

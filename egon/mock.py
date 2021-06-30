@@ -3,18 +3,39 @@ unittests. Instead of accomplishing a user defined action, mock nodes sleep
 for a pre-defined number of seconds.
 """
 
+from abc import ABC
+
 from egon import nodes
 from egon.connectors import Input, Output
-from egon.pipeline import Pipeline
+from egon.nodes import AbstractNode
 
 
-class MockSource(nodes.Source):
+class Mock(AbstractNode, ABC):
+    """Base class for mock testing nodes"""
+
+    def __init__(self) -> None:
+        self._is_finished = False
+        super(Mock, self).__init__()
+
+    def is_finished(self) -> bool:
+        """Return whether the mock node has already been executed"""
+
+        return self._is_finished
+
+    def execute(self) -> None:
+        """Execute the mock pipeline node"""
+
+        super(Mock, self).execute()
+        self._is_finished = True
+
+
+class MockSource(Mock, nodes.Source):
     """A ``Source`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, load_data: list = None, num_processes=0) -> None:
+    def __init__(self, load_data: list = None) -> None:
         self.output = Output()
         self.load_data = load_data or []
-        super(MockSource, self).__init__(num_processes=num_processes)
+        super(MockSource, self).__init__()
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -23,13 +44,13 @@ class MockSource(nodes.Source):
             self.output.put(x)
 
 
-class MockTarget(nodes.Target):
+class MockTarget(Mock, nodes.Target):
     """A ``Target`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, num_processes=0) -> None:
+    def __init__(self) -> None:
         self.input = Input()
         self.accumulated_data = []
-        super(MockTarget, self).__init__(num_processes=num_processes)
+        super(MockTarget, self).__init__()
 
     def action(self) -> None:
         """Placeholder function to satisfy requirements of abstract parent"""
@@ -38,36 +59,16 @@ class MockTarget(nodes.Target):
             self.accumulated_data.append(x)
 
 
-class MockNode(nodes.Node):
+class MockNode(Mock, nodes.Node):
     """A ``Node`` subclass that implements placeholder functions for abstract methods"""
 
-    def __init__(self, num_processes=0) -> None:
+    def __init__(self) -> None:
         self.output = Output()
         self.input = Input()
-        super(MockNode, self).__init__(num_processes=num_processes)
+        super(MockNode, self).__init__()
 
     def action(self) -> None:  # pragma: no cover
         """Placeholder function to satisfy requirements of abstract parent"""
 
         for x in self.input.iter_get():
             self.output.put(x)
-
-
-class MockPipeline(Pipeline):
-    """A mock pipeline with a root and a leaf"""
-
-    def __init__(self) -> None:
-        self.source = MockSource(num_processes=2)
-        self.target = MockTarget()
-        self.source.output.connect(self.target.input)
-        super().__init__()
-
-    def all_alive(self) -> bool:
-        """Return if all processes managed by the pipeline are alive"""
-
-        return all(p.is_alive() for p in self._get_processes())
-
-    def any_alive(self) -> bool:
-        """Return if any process managed by the pipeline are alive"""
-
-        return any(p.is_alive() for p in self._get_processes())
