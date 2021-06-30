@@ -34,9 +34,9 @@ class MultiplePartnerMapping(TestCase):
 
 
 class MultiplePartnerDataRouting(TestCase):
-    def test_multiple_connection_support(self) -> None:
-        """Test output connectors support sending data to multiple input connectors"""
+    """Test output connectors support sending data to multiple input connectors"""
 
+    def runTest(self) -> None:
         # Create one node to output data and two to accept it
         test_data = [1, 2, 3]
         source = MockSource(test_data)
@@ -46,6 +46,7 @@ class MultiplePartnerDataRouting(TestCase):
         # Connect two outputs to the same input
         source.output.connect(target_a.input)
         source.output.connect(target_b.input)
+
         source.execute()
         sleep(1)  # Give the queue a chance to update
 

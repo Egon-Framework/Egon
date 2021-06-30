@@ -1,6 +1,7 @@
 """Tests for the class based construction of pipeline nodes."""
 
 from functools import partial
+from time import sleep
 from unittest import TestCase
 
 from egon import mock
@@ -72,14 +73,16 @@ class ExpectingData(TestCase):
     def test_false_for_empty_queue_and_finished_parent(self) -> None:
         """Test the return is False for a EMPTY queue and a FINISHED PARENT node"""
 
-        self.root.run_mock()
+        self.root.execute()
         self.assertFalse(self.node.is_expecting_data())
 
     def test_true_if_input_queue_has_data(self) -> None:
         """Test the return is True for a NOT EMPTY queue and a FINISHED PARENT node"""
 
-        self.root.run_mock()
+        self.root.execute()
         self.node.input._queue.put(5)
+        sleep(1)  # Give the queue an opportunity to update
+
         self.assertTrue(self.node.is_expecting_data())
 
     def test_true_if_parent_is_running(self) -> None:
