@@ -1,4 +1,5 @@
 """Tests for the connection of multiple inputs and outputs together"""
+
 from time import sleep
 from unittest import TestCase
 
