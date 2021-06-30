@@ -62,7 +62,7 @@ class PipelineCytoscape(cyto.Cytoscape):
 
                 # Draw an arrow between the connector and each of its partners
                 if isinstance(connector, Input):
-                    for partner in connector.get_partners():
+                    for partner in connector.partners:
                         partner_id = str(id(partner))
                         elements.append({
                             'data': {
