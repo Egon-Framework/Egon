@@ -31,15 +31,14 @@ class ProcessAllocation(TestCase):
         with self.assertRaises(ValueError):
             MPool(-1, target_func)
 
-    def test_error_on_zero_processes(self) -> None:
-        """Assert a value error is raised when the ``num_processes`` attribute is set to zero"""
-
-        with self.assertRaises(ValueError):
-            MPool(0, target_func)
-
 
 class Execution(TestCase):
     """Tests for the starting, running, and stopping of allocated processes"""
+
+    def test_pool_is_finished_for_zero_processes(self) -> None:
+        """Test the ``is_finished`` is true for a pool with zero processes"""
+
+        self.assertTrue(MPool(0, target_func).is_finished)
 
     def test_pool_is_finished_after_execution(self) -> None:
         """Test the ``is_finished`` property is updated after the pool executes"""
