@@ -76,14 +76,25 @@ class MPool:
         # Check that all forked processes are finished
         return all(self._states.values())
 
+    def _raise_if_zero(self, action):
+        """Raise an error if pool size is zero"""
+
+        if self.num_processes == 0:
+            raise RuntimeError(f'Pool has zero assigned processes. No processes available to {action}')
+
     def start(self) -> None:
         """Start all processes asynchronously"""
 
+        self._raise_if_zero('start')
         for p in self._processes:
             p.start()
 
     def join(self) -> None:
         """Wait for any running pool processes to finish running before continuing execution"""
+
+        self._raise_if_zero('join')
+        if self.num_processes == 0:
+            raise RuntimeError('Pool has zero assigned processes. No processes available to join')
 
         for p in self._processes:
             p.join()
@@ -91,6 +102,7 @@ class MPool:
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
+        self._raise_if_zero('kill')
         for p in self._processes:
             p.terminate()
 
