@@ -7,12 +7,13 @@ type of connector. ``Output`` connectors are used to send data and
 
 from __future__ import annotations
 
-import multiprocessing as mp
-from queue import Empty
 from typing import Any, Optional, TYPE_CHECKING, Tuple
 
-from .utils import KillSignal, ObjectCollection
+from ray.util.queue import Empty
+from ray.util.queue import Queue
+
 from .exceptions import MissingConnectionError, OverwriteConnectionError
+from .utils import KillSignal, ObjectCollection
 
 if TYPE_CHECKING:  # pragma: no cover
     from .nodes import AbstractNode
@@ -66,7 +67,7 @@ class Input(BaseConnector):
 
         super().__init__(name=name)
         self._maxsize = maxsize
-        self._queue = mp.Queue(maxsize=maxsize)
+        self._queue = Queue(maxsize=maxsize)
 
     def is_empty(self) -> bool:
         """Return if the connection queue is empty"""
@@ -91,7 +92,7 @@ class Input(BaseConnector):
         an item is moved from the connector into the node.
         """
 
-        return self._queue._maxsize
+        return self._queue.maxsize
 
     @maxsize.setter
     def maxsize(self, maxsize: int) -> None:
@@ -101,7 +102,7 @@ class Input(BaseConnector):
         if not self.is_empty():
             raise RuntimeError('Cannot change maximum connector size when the connector is not empty.')
 
-        self._queue = mp.Queue(maxsize=maxsize)
+        self._queue = Queue(maxsize=maxsize)
 
     def get(self, timeout: Optional[int] = None, refresh_interval: int = 2):
         """Blocking call to retrieve input data
