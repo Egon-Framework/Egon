@@ -6,12 +6,12 @@ that produce, analyze, and consume data respectively.
 from __future__ import annotations
 
 import abc
-import multiprocessing as mp
 from abc import ABC
 from itertools import chain
-from time import sleep
-from typing import Collection
+from typing import Collection, Optional
 from typing import List, Tuple, Union
+
+from ray.util.multiprocessing import Pool
 
 from . import connectors, exceptions
 
@@ -43,10 +43,8 @@ class MPool:
         if num_processes < 0:
             raise ValueError(f'Cannot instantiate negative forked processes (got {num_processes}).')
 
-        # Note that we use the memory address of the processes and not the
-        # ``pid`` attribute. ``pid`` is only set after the process is started.
-        self._processes = [mp.Process(target=self._call_target) for _ in range(num_processes)]
-        self._states = mp.Manager().dict({id(p): False for p in self._processes})
+        self._pool: Optional[Pool] = None
+        self._num_processes = num_processes
         self._target = target
 
     def _call_target(self) -> None:  # pragma: nocover, Called from forked process
@@ -54,15 +52,11 @@ class MPool:
 
         self._target()
 
-        # Mark the current process as being finished
-        sleep(.5)  # Allow any last minute calls to finish before changing the state
-        self._states[id(mp.current_process())] = True
-
     @property
     def num_processes(self) -> int:
         """The number of processes assigned to the pool"""
 
-        return len(self._processes)
+        return self._num_processes
 
     @property
     def target(self) -> callable:
@@ -74,37 +68,29 @@ class MPool:
         """Return whether all processes have finished executing"""
 
         # Check that all forked processes are finished
-        return all(self._states.values())
-
-    def _raise_if_zero(self, action):
-        """Raise an error if pool size is zero"""
-
-        if self.num_processes == 0:
-            raise RuntimeError(f'Pool has zero assigned processes. No processes available to {action}')
+        return (self._pool is not None) and self._pool._closed
 
     def start(self) -> None:
         """Start all processes asynchronously"""
 
-        self._raise_if_zero('start')
-        for p in self._processes:
-            p.start()
+        self._pool = Pool(ray_address="auto", processes=self.num_processes)
+        self._pool.apply_async(self._call_target)
 
     def join(self) -> None:
         """Wait for any running pool processes to finish running before continuing execution"""
 
-        self._raise_if_zero('join')
-        if self.num_processes == 0:
-            raise RuntimeError('Pool has zero assigned processes. No processes available to join')
+        if not self._pool or self._pool._closed:
+            raise RuntimeError('Pool is not running')
 
-        for p in self._processes:
-            p.join()
+        self._pool.join()
 
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
-        self._raise_if_zero('kill')
-        for p in self._processes:
-            p.terminate()
+        if not self._pool or self._pool._closed:
+            raise RuntimeError('Pool is not running')
+
+        self._pool.terminate()
 
 
 class AbstractNode(abc.ABC):
