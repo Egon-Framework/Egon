@@ -114,7 +114,7 @@ class AbstractNode(abc.ABC):
         """Represents a single pipeline node"""
 
         self._pool: MPool = MPool(num_processes, self.execute)
-        self._allow_pool_overwrite = True
+        self._allow_pool_overwrite = True  # See setter for ``num_processes`` attribute
         self.name = name or self.__class__.__name__
 
         # Accumulate all attributes that are Input or Output types
@@ -231,19 +231,20 @@ class AbstractNode(abc.ABC):
         self.teardown()
 
     def is_finished(self) -> bool:
-        """Return whether all node processes have finished processing data"""
+        """Return whether all node processes have finished processing data
+
+        The returned value defaults to ``True`` when the number of processes
+        assigned to the node instance is zero.
+        """
 
         return self._pool.is_finished()
 
     def is_expecting_data(self) -> bool:
-        """Return whether the node is still expecting data from upstream"""
+        """Return whether the node is still expecting data from upstream
 
-        if self.num_processes == 0:
-            for input_connector in self._get_attrs(connectors.Input):
-                if not input_connector.is_empty():
-                    return True
-
-            return False
+        This function includes checks for whether any upstream nodes are still
+        running or any data is pending in the queue of an input connector.
+        """
 
         for input_connector in self._get_attrs(connectors.Input):
             # IMPORTANT: The order of the following code blocks is crucial
