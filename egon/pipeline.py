@@ -15,6 +15,8 @@ from inspect import getmembers
 from itertools import chain
 from typing import List, Tuple
 
+import ray
+
 from . import connectors as conn
 from . import nodes
 from .visualize import Visualizer
@@ -23,7 +25,19 @@ from .visualize import Visualizer
 class Pipeline:
     """Manages a collection of nodes as a single analysis pipeline"""
 
-    def __init__(self) -> None:
+    def __init__(self, address: str = None) -> None:
+        """Base class for a data analysis pipeline constructed of multiple interconnected nodes
+
+        The pipeline will run on a single machine by default and will
+        automatically detect the available hardware resources. For instructions
+        on how to configure the available resources and/or run on a cluster
+        environment, see the official docs: https://mwvgroup.github.io/Egon/
+
+        Args:
+            address: Optionally specify the address of the ray cluster to run on
+        """
+
+        self.address = address
 
         # Store the nodes and connectors used to build the pipeline
         # so they can be exposed by public accessors
@@ -113,6 +127,7 @@ class Pipeline:
     def run_async(self) -> None:
         """Start all processes asynchronously"""
 
+        ray.init(address=self.address, ignore_reinit_error=True)
         for node in chain(*self.nodes):
             node._pool.start()
 
