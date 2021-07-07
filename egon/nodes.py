@@ -40,8 +40,8 @@ class MPool:
             target: The function to be executed by the allocated processes
         """
 
-        if num_processes <= 0:
-            raise ValueError(f'Cannot instantiate less than 1 forked processes (got {num_processes}).')
+        if num_processes < 0:
+            raise ValueError(f'Cannot instantiate negative forked processes (got {num_processes}).')
 
         # Note that we use the memory address of the processes and not the
         # ``pid`` attribute. ``pid`` is only set after the process is started.
@@ -76,14 +76,25 @@ class MPool:
         # Check that all forked processes are finished
         return all(self._states.values())
 
+    def _raise_if_zero(self, action):
+        """Raise an error if pool size is zero"""
+
+        if self.num_processes == 0:
+            raise RuntimeError(f'Pool has zero assigned processes. No processes available to {action}')
+
     def start(self) -> None:
         """Start all processes asynchronously"""
 
+        self._raise_if_zero('start')
         for p in self._processes:
             p.start()
 
     def join(self) -> None:
         """Wait for any running pool processes to finish running before continuing execution"""
+
+        self._raise_if_zero('join')
+        if self.num_processes == 0:
+            raise RuntimeError('Pool has zero assigned processes. No processes available to join')
 
         for p in self._processes:
             p.join()
@@ -91,6 +102,7 @@ class MPool:
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
+        self._raise_if_zero('kill')
         for p in self._processes:
             p.terminate()
 
@@ -101,10 +113,11 @@ class AbstractNode(abc.ABC):
     def __init__(self, name: str = None, num_processes: int = 1) -> None:
         """Represents a single pipeline node"""
 
-        self._pool = MPool(num_processes, self.execute)
-        self.num_processes = self._pool.num_processes
+        self._pool: MPool = MPool(num_processes, self.execute)
+        self._allow_pool_overwrite = True  # See setter for ``num_processes`` attribute
         self.name = name or self.__class__.__name__
 
+        # Accumulate all attributes that are Input or Output types
         self._inputs = []
         self._outputs = []
         for connector in self._get_attrs(connectors.BaseConnector):
@@ -140,6 +153,19 @@ class AbstractNode(abc.ABC):
                     attr_list.append(attr)
 
         return attr_list
+
+    @property
+    def num_processes(self) -> int:
+        """The number of processes assigned to the pool"""
+
+        return self._pool.num_processes
+
+    @num_processes.setter
+    def num_processes(self, val) -> None:
+        if not self._allow_pool_overwrite:
+            raise RuntimeError('Cannot change number of processes on running or finished node')
+
+        self._pool = MPool(val, self.execute)
 
     @property
     def connectors(self) -> Tuple[Tuple[connectors.Input, ...], Tuple[connectors.Output, ...]]:
@@ -199,17 +225,26 @@ class AbstractNode(abc.ABC):
         Execution includes all ``setup``, ``action``, and ``teardown`` tasks.
         """
 
+        self._allow_pool_overwrite = False
         self.setup()
         self.action()
         self.teardown()
 
     def is_finished(self) -> bool:
-        """Return whether all node processes have finished processing data"""
+        """Return whether all node processes have finished processing data
+
+        The returned value defaults to ``True`` when the number of processes
+        assigned to the node instance is zero.
+        """
 
         return self._pool.is_finished()
 
     def is_expecting_data(self) -> bool:
-        """Return whether the node is still expecting data from upstream"""
+        """Return whether the node is still expecting data from upstream
+
+        This function includes checks for whether any upstream nodes are still
+        running or any data is pending in the queue of an input connector.
+        """
 
         for input_connector in self._get_attrs(connectors.Input):
             # IMPORTANT: The order of the following code blocks is crucial

@@ -31,12 +31,6 @@ class ProcessAllocation(TestCase):
         with self.assertRaises(ValueError):
             MPool(-1, target_func)
 
-    def test_error_on_zero_processes(self) -> None:
-        """Assert a value error is raised when the ``num_processes`` attribute is set to zero"""
-
-        with self.assertRaises(ValueError):
-            MPool(0, target_func)
-
 
 class Execution(TestCase):
     """Tests for the starting, running, and stopping of allocated processes"""
@@ -64,3 +58,34 @@ class Execution(TestCase):
         self.assertTrue(
             pool._processes[0].exitcode < 0,
             f'Process not ended by termination signal ({pool._processes[0].exitcode})')
+
+
+class ZeroProcessPool(TestCase):
+    """Tests for pool behavior with zero processes"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.pool = MPool(0, target_func)
+
+    def test_pool_is_finished_by_default(self) -> None:
+        """Test the ``is_finished`` is true for a pool with zero processes"""
+
+        self.assertTrue(MPool(0, target_func).is_finished)
+
+    def test_run_error(self):
+        """Test running the pool with zero processes raises an error"""
+
+        with self.assertRaises(RuntimeError):
+            self.pool.start()
+
+    def test_join_error(self):
+        """Test joining the pool with zero processes raises an error"""
+
+        with self.assertRaises(RuntimeError):
+            self.pool.join()
+
+    def test_kill_error(self):
+        """Test killing the pool with zero processes raises an error"""
+
+        with self.assertRaises(RuntimeError):
+            self.pool.kill()
