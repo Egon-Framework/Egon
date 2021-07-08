@@ -8,6 +8,7 @@ from __future__ import annotations
 import abc
 from abc import ABC
 from itertools import chain
+from time import sleep
 from typing import Collection, Optional
 from typing import List, Tuple, Union
 
@@ -69,7 +70,6 @@ class MPool:
         """Return whether all processes have finished executing"""
 
         # Check that all forked processes are finished
-        print(self._pool_future.ready())
         return (self._pool_future is not None) and self._pool_future.ready()
 
     def start(self) -> None:
@@ -97,6 +97,7 @@ class MPool:
             raise RuntimeError('Pool is not running')
 
         self._pool.terminate()
+        sleep(1)
 
 
 class AbstractNode(abc.ABC):

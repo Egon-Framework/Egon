@@ -51,6 +51,7 @@ class Execution(TestCase):
 
         pool = MPool(1, lambda *args: sleep(10))
         pool.start()
-        pool.kill()
+        self.assertFalse(pool.is_finished())
 
+        pool.kill()
         self.assertTrue(pool.is_finished())
