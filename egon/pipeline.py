@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import os
 import warnings
-from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
 from itertools import chain
@@ -68,16 +67,6 @@ class Pipeline:
         for node in chain(*self.nodes):
             node.validate()
 
-    def _get_processes(self) -> List[Process]:
-        """Return a list of processes forked by pipeline nodes"""
-
-        # Collect all of the processes assigned to each node
-        processes = []
-        for node in chain(*self.nodes):
-            processes.extend(node._pool._processes)
-
-        return processes
-
     @property
     def nodes(self) -> Tuple[Tuple[nodes.Source], Tuple[nodes.Node], Tuple[nodes.Target]]:
         """Return a list of all nodes in the pipeline
@@ -104,13 +93,13 @@ class Pipeline:
     def num_processes(self) -> int:
         """The number of processes forked by to the pipeline"""
 
-        return len(self._get_processes())
+        return sum(node._pool.num_processes for node in chain(*self.nodes) if node._pool is not None)
 
     def kill(self) -> None:
         """Kill all running pipeline processes without trying to exit gracefully"""
 
-        for p in self._get_processes():
-            p.terminate()
+        for node in chain(*self.nodes):
+            node._pool.terminate()
 
     def run(self) -> None:
         """Start all pipeline processes and block execution until all processes exit"""

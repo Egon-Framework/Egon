@@ -40,8 +40,8 @@ class MPool:
             target: The function to be executed by the allocated processes
         """
 
-        if num_processes < 0:
-            raise ValueError(f'Cannot instantiate negative forked processes (got {num_processes}).')
+        if num_processes <= 0:
+            raise ValueError(f'Cannot instantiate less than one processes in a pool (got {num_processes}).')
 
         self._pool: Optional[Pool] = None
         self._num_processes = num_processes

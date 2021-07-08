@@ -1,6 +1,6 @@
 """Generic utility classes"""
 
-from typing import Hashable, Collection, Iterable, Optional
+from typing import Collection, Hashable, Iterable, Optional
 
 
 class KillSignal:
