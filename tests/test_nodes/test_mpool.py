@@ -41,8 +41,9 @@ class Execution(TestCase):
         self.assertFalse(pool.is_finished(), 'Default finished state is not False.')
 
         pool.start()
-        pool.join()
+        self.assertFalse(pool.is_finished())
 
+        pool.join()
         self.assertTrue(pool.is_finished())
 
     def test_processes_killed_on_command(self) -> None:
@@ -51,9 +52,5 @@ class Execution(TestCase):
         pool = MPool(1, lambda *args: sleep(10))
         pool.start()
         pool.kill()
-        pool.join()
 
-        self.assertFalse(pool.is_finished())
-        self.assertTrue(
-            pool._processes[0].exitcode < 0,
-            f'Process not ended by termination signal ({pool._processes[0].exitcode})')
+        self.assertTrue(pool.is_finished())

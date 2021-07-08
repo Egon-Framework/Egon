@@ -11,7 +11,7 @@ from itertools import chain
 from typing import Collection, Optional
 from typing import List, Tuple, Union
 
-from ray.util.multiprocessing import Pool
+from ray.util.multiprocessing.pool import AsyncResult, Pool
 
 from . import connectors, exceptions
 
@@ -44,6 +44,7 @@ class MPool:
             raise ValueError(f'Cannot instantiate less than one processes in a pool (got {num_processes}).')
 
         self._pool: Optional[Pool] = None
+        self._pool_future: Optional[AsyncResult] = None
         self._num_processes = num_processes
         self._target = target
 
@@ -68,18 +69,23 @@ class MPool:
         """Return whether all processes have finished executing"""
 
         # Check that all forked processes are finished
-        return (self._pool is not None) and self._pool._closed
+        print(self._pool_future.ready())
+        return (self._pool_future is not None) and self._pool_future.ready()
 
     def start(self) -> None:
         """Start all processes asynchronously"""
 
+        if self._pool is not None:
+            raise RuntimeError('Pool is already running')
+
         self._pool = Pool(ray_address="auto", processes=self.num_processes)
-        self._pool.apply_async(self._call_target)
+        self._pool_future = self._pool.apply_async(self._call_target)
+        self._pool.close()
 
     def join(self) -> None:
         """Wait for any running pool processes to finish running before continuing execution"""
 
-        if not self._pool or self._pool._closed:
+        if self._pool_future is None or self._pool_future.ready():
             raise RuntimeError('Pool is not running')
 
         self._pool.join()
@@ -87,7 +93,7 @@ class MPool:
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
-        if not self._pool or self._pool._closed:
+        if self._pool_future is None or self._pool_future.ready():
             raise RuntimeError('Pool is not running')
 
         self._pool.terminate()
