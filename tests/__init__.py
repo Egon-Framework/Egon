@@ -16,7 +16,7 @@ def startTestRun(self) -> None:
     # See https://github.com/ray-project/ray/issues/9546
     warnings.filterwarnings('ignore', category=ResourceWarning, module='ray')
 
-    ray.init(num_cpus=4, logging_level=logging.ERROR)
+    ray.init(num_cpus=4, logging_level=logging.ERROR, ignore_reinit_error=True, include_dashboard=False)
 
 
 unittest.result.TestResult.startTestRun = startTestRun
