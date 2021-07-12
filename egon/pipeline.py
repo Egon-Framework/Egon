@@ -140,6 +140,7 @@ class Pipeline:
         from waitress import serve
 
         if not quiet:
+            # noinspection HttpUrlsUsage
             print(f'Launching server at http://{host}:{port}')
 
         # we increase the number of threads from 4 (the default) to 8 so the
