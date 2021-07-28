@@ -55,20 +55,15 @@ class MPool:
 
         return self._num_processes
 
-    def is_started(self) -> bool:
+    def is_running(self) -> bool:
         """Return whether the ``start`` method has already been called"""
 
-        return self._pool is not None
-
-    def is_finished(self) -> bool:
-        """Return whether all processes have finished running"""
-
-        return self.is_started() and not any(remote.future().running() for remote in self._pool)
+        return self._pool is not None and any(remote.future().running() for remote in self._pool)
 
     def start(self) -> None:
         """Start all processes asynchronously"""
 
-        if self.is_started():
+        if self.is_running():
             raise RuntimeError('Pool was already started once before')
 
         self._pool = [self._actor.act() for _ in range(self._num_processes)]
@@ -76,19 +71,11 @@ class MPool:
     def join(self) -> None:
         """Wait for any running pool processes to finish running before continuing execution"""
 
-        if not self.is_started() or self.is_finished():
-            raise RuntimeError('Pool is not running.')
-
         for remote in self._pool:
             ray.get(remote)
 
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
-        if not self.is_started() or self.is_finished():
-            raise RuntimeError('Pool is not running.')
-
-        for remote in self._pool:
-            remote.future().cancel()
-
+        ray.kill(self._actor)
         sleep(1)

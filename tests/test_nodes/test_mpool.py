@@ -29,29 +29,3 @@ class ProcessAllocation(TestCase):
 
         with self.assertRaises(ValueError):
             MPool(-1, target_func)
-
-
-class Execution(TestCase):
-    """Tests for the starting, running, and stopping of allocated processes"""
-
-    def test_pool_is_finished_after_execution(self) -> None:
-        """Test the ``is_finished`` property is updated after the pool executes"""
-
-        pool = MPool(2, target_func)
-        self.assertFalse(pool.is_finished(), 'Default finished state is not False.')
-
-        pool.start()
-        self.assertFalse(pool.is_finished())
-
-        pool.join()
-        self.assertTrue(pool.is_finished())
-
-    def test_processes_killed_on_command(self) -> None:
-        """Test processes are killed on demand"""
-
-        pool = MPool(1, lambda *args: sleep(10))
-        pool.start()
-        self.assertFalse(pool.is_finished())
-
-        pool.kill()
-        self.assertTrue(pool.is_finished())

@@ -151,14 +151,14 @@ class AbstractNode(abc.ABC):
         self.action()
         self.teardown()
 
-    def is_finished(self) -> bool:
-        """Return whether all node processes have finished processing data
+    def is_running(self) -> bool:
+        """Return if any node processes are still processing data
 
         The returned value defaults to ``True`` when the number of processes
         assigned to the node instance is zero.
         """
 
-        return self._pool.is_finished()
+        return self._pool.is_running()
 
     def is_expecting_data(self) -> bool:
         """Return whether the node is still expecting data from upstream
@@ -171,7 +171,7 @@ class AbstractNode(abc.ABC):
             # IMPORTANT: The order of the following code blocks is crucial
             # We check for any running upstream nodes first
             for output_connector in input_connector.partners:
-                if not output_connector.parent_node.is_finished():
+                if output_connector.parent_node.is_running():
                     return True
 
             # Check for any unprocessed data once we know there are no
