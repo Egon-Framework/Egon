@@ -8,13 +8,11 @@ from __future__ import annotations
 import abc
 from abc import ABC
 from itertools import chain
-from time import sleep
-from typing import Collection, Optional
+from typing import Collection
 from typing import List, Tuple, Union
 
-from ray.util.multiprocessing.pool import AsyncResult, Pool
-
 from . import connectors, exceptions
+from .parallel import MPool
 
 
 def _get_nodes_from_connectors(connector_list: Collection[connectors.BaseConnector]) -> Tuple:
@@ -28,76 +26,6 @@ def _get_nodes_from_connectors(connector_list: Collection[connectors.BaseConnect
     """
 
     return tuple(p.parent_node for c in connector_list for p in c.partners)
-
-
-class MPool:
-    """A pool of processes assigned to a single target function"""
-
-    def __init__(self, num_processes: int, target: callable) -> None:
-        """Create a collection of processes assigned to execute a given callable
-
-        Args:
-            num_processes: The number of processes to allocate
-            target: The function to be executed by the allocated processes
-        """
-
-        if num_processes <= 0:
-            raise ValueError(f'Cannot instantiate less than one processes in a pool (got {num_processes}).')
-
-        self._pool: Optional[Pool] = None
-        self._pool_future: Optional[AsyncResult] = None
-        self._num_processes = num_processes
-        self._target = target
-
-    def _call_target(self) -> None:  # pragma: nocover, Called from forked process
-        """Wrapper for calling the pool's target function"""
-
-        self._target()
-
-    @property
-    def num_processes(self) -> int:
-        """The number of processes assigned to the pool"""
-
-        return self._num_processes
-
-    @property
-    def target(self) -> callable:
-        """The callable to be executed by the pool"""
-
-        return self._target
-
-    def is_finished(self) -> bool:
-        """Return whether all processes have finished executing"""
-
-        # Check that all forked processes are finished
-        return (self._pool_future is not None) and self._pool_future.ready()
-
-    def start(self) -> None:
-        """Start all processes asynchronously"""
-
-        if self._pool is not None:
-            raise RuntimeError('Pool is already running')
-
-        self._pool = Pool(ray_address="auto", processes=self.num_processes)
-        self._pool_future = self._pool.apply_async(self._call_target)
-        self._pool.close()
-
-    def join(self) -> None:
-        """Wait for any running pool processes to finish running before continuing execution"""
-
-        if self._pool_future is None or self._pool_future.ready():
-            raise RuntimeError('Pool is not running')
-
-        self._pool.join()
-
-    def kill(self) -> None:
-        """Kill all running processes without trying to exit gracefully"""
-
-        if self._pool_future is None or self._pool_future.ready():
-            raise RuntimeError('Pool is not running')
-
-        self._pool.terminate()
-        sleep(1)
 
 
 class AbstractNode(abc.ABC):
