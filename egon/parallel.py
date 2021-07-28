@@ -1,3 +1,5 @@
+"""Utilities for running code in parallel"""
+
 from __future__ import annotations
 
 from time import sleep
@@ -8,15 +10,24 @@ from ray import ObjectRef
 
 
 class Actor:
+    """Worker object responsible for executing tasks a remote machine"""
 
     def __init__(self, fun: callable) -> None:
+        """Worker object responsible for executing tasks a remote machine
+
+        Args:
+            fun: The callable to be executed by the actor
+        """
+
         self._fun = fun
 
     @ray.remote
-    def _act(self) -> None:
+    def _act(self) -> Optional:
         return self._fun()
 
-    def act(self) -> None:
+    def act(self) -> Optional:
+        """Run the actor remotely"""
+
         return self._act.remote(self)
 
 
@@ -50,15 +61,15 @@ class MPool:
         return self._pool is not None
 
     def is_finished(self) -> bool:
-        """Return whether all processes have finished executing"""
+        """Return whether all processes have finished running"""
 
-        return self.is_started() and all(remote.future().done() for remote in self._pool)
+        return self.is_started() and not any(remote.future().running() for remote in self._pool)
 
     def start(self) -> None:
         """Start all processes asynchronously"""
 
         if self.is_started():
-            raise RuntimeError('Pool was already started')
+            raise RuntimeError('Pool was already started once before')
 
         self._pool = [self._actor.act() for _ in range(self._num_processes)]
 
@@ -66,7 +77,7 @@ class MPool:
         """Wait for any running pool processes to finish running before continuing execution"""
 
         if not self.is_started() or self.is_finished():
-            raise RuntimeError('Pool is not running')
+            raise RuntimeError('Pool is not running.')
 
         for remote in self._pool:
             ray.get(remote)
@@ -74,8 +85,10 @@ class MPool:
     def kill(self) -> None:
         """Kill all running processes without trying to exit gracefully"""
 
-        if self._pool_future is None or self._pool_future.ready():
-            raise RuntimeError('Pool is not running')
+        if not self.is_started() or self.is_finished():
+            raise RuntimeError('Pool is not running.')
 
-        self._pool.terminate()
+        for remote in self._pool:
+            remote.future().cancel()
+
         sleep(1)
