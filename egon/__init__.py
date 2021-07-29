@@ -15,4 +15,4 @@ except ImportError:
     warnings.warn('Ray must be installed to use the egon package.')
 
 else:
-    ray.init(ignore_reinit_error=True, include_dashboard=False)
+    ray.init(ignore_reinit_error=True, include_dashboard=False, log_to_driver=False, logging_level=50)
