@@ -7,6 +7,12 @@ __version__ = '0.5.0'
 __author__ = 'MWV Research Group'
 __license__ = 'GPL 3.0'
 
-import ray
+try:
+    import ray
 
-ray.init(ignore_reinit_error=True, include_dashboard=False)
+except ImportError:
+    import warnings
+    warnings.warn('Ray must be installed to use the egon package.')
+
+else:
+    ray.init(ignore_reinit_error=True, include_dashboard=False)
