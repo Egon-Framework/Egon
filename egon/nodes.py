@@ -152,16 +152,12 @@ class AbstractNode(abc.ABC):
         self.teardown()
 
     def is_running(self) -> bool:
-        """Return if any node processes are still processing data
-
-        The returned value defaults to ``True`` when the number of processes
-        assigned to the node instance is zero.
-        """
+        """Return if any node processes are still processing data"""
 
         return self._pool.is_running()
 
     def is_expecting_data(self) -> bool:
-        """Return whether the node is still expecting data from upstream
+        """Return if the node is expecting data from any nodes running upstream
 
         This function includes checks for whether any upstream nodes are still
         running or any data is pending in the queue of an input connector.

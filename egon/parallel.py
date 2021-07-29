@@ -58,7 +58,7 @@ class MPool:
     def is_running(self) -> bool:
         """Return whether the ``start`` method has already been called"""
 
-        return self._pool is not None and any(remote.future().running() for remote in self._pool)
+        return self._pool is not None and not any(remote.future().done() or remote.future().cancelled() for remote in self._pool)
 
     def start(self) -> None:
         """Start all processes asynchronously"""

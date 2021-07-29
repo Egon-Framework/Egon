@@ -59,8 +59,14 @@ class TreeNavigation(TestCase):
 class ExpectingData(TestCase):
     """Tests for the ``is_expecting_data`` function
 
-    The ``is_expecting_data`` function combines two booleans.
-    This class evaluates all four squares of the corresponding truth table
+    These tests verify the following truth table for an inclusive or.
+
+    Parent Node Running | Queue not Empty || Is Expecting Data
+    --------------------|-----------------||-------------------
+              T         |        T        ||        T
+              T         |        F        ||        T
+              F         |        T        ||        T
+              F         |        F        ||        F
     """
 
     def setUp(self) -> None:
@@ -71,29 +77,39 @@ class ExpectingData(TestCase):
         self.root.output.connect(self.node.input)
 
     def test_false_for_empty_queue_and_finished_parent(self) -> None:
-        """Test the return is False for a EMPTY queue and a FINISHED PARENT node"""
+        """Test the return is False for a EMPTY queue and a NOT RUNNING parent"""
 
-        self.root.execute()
+        self.assertFalse(self.root.is_running())
+        self.assertFalse(self.node.input._queue)
         self.assertFalse(self.node.is_expecting_data())
 
     def test_true_if_input_queue_has_data(self) -> None:
-        """Test the return is True for a NOT EMPTY queue and a FINISHED PARENT node"""
+        """Test the return is True for a NOT EMPTY queue and a NOT RUNNING parent"""
 
-        self.root.execute()
         self.node.input._queue.put(5)
         sleep(1)  # Give the queue an opportunity to update
 
+        self.assertFalse(self.root.is_running())
+        self.assertTrue(self.node.input._queue)
         self.assertTrue(self.node.is_expecting_data())
 
-    def test_true_if_parent_is_running(self) -> None:
-        """Test the return is True for a EMPTY queue and a NOT FINISHED PARENT node"""
+    def test_false_if_parent_is_not_running(self) -> None:
+        """Test the return is True for a EMPTY queue and a RUNNING node"""
 
+        self.root.set_running_state(True)
+        self.assertTrue(self.root.is_running())
+        self.assertFalse(self.node.input._queue)
         self.assertTrue(self.node.is_expecting_data())
 
     def test_true_if_input_queue_has_data_and_parent_is_running(self) -> None:
-        """Test the return is True for a NOT EMPTY queue and a NOT FINISHED PARENT node"""
+        """Test the return is True for a NOT EMPTY queue and a RUNNING node"""
 
+        self.root.set_running_state(True)
         self.node.input._queue.put(5)
+        sleep(1)  # Give the queue an opportunity to update
+
+        self.assertTrue(self.root.is_running())
+        self.assertTrue(self.node.input._queue)
         self.assertTrue(self.node.is_expecting_data())
 
 
