@@ -24,23 +24,14 @@ class SimplePipeline(Pipeline):
 class ProcessDiscovery(TestCase):
     """Test the pipeline is aware of all processes forked by it's nodes"""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.pipeline = SimplePipeline()
-        cls.expected_processes = []
-        cls.expected_processes.extend(cls.pipeline.source._pool._processes)
-        cls.expected_processes.extend(cls.pipeline.inline._pool._processes)
-        cls.expected_processes.extend(cls.pipeline.target._pool._processes)
+    def runTest(self) -> None:
+        pipeline = SimplePipeline()
+        expected_processes = \
+            pipeline.source._pool.num_processes + \
+            pipeline.inline._pool.num_processes + \
+            pipeline.target._pool.num_processes
 
-    def test_collected_processes_match_nodes(self) -> None:
-        """Test ``_get_processes`` returns forked processes from all pipeline nodes"""
-
-        self.assertCountEqual(self.expected_processes, self.pipeline._get_processes())
-
-    def test_process_count(self) -> None:
-        """Test the pipelines process count matches the sum of processes allocated to each node"""
-
-        self.assertEqual(len(self.expected_processes), self.pipeline.num_processes)
+        self.assertEqual(expected_processes, pipeline.num_processes)
 
 
 class NodeDiscovery(TestCase):

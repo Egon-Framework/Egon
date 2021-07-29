@@ -2,7 +2,7 @@
 through to the end.
 """
 
-from multiprocessing import Queue
+from ray.util.queue import Queue
 from unittest import TestCase
 
 from egon.decorators import as_node, as_source, as_target

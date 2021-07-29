@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional, TYPE_CHECKING, Tuple
+from typing import List, Optional, TYPE_CHECKING, Tuple, cast
 
 import numpy as np
 import psutil
@@ -51,7 +51,7 @@ class SystemUsage(BaseGraphCallback):
 
         now = datetime.now()
         y = np.transpose([psutil.cpu_percent(percpu=True)])
-        x = np.full_like(y, now, dtype=datetime)
+        x = np.full_like(y, cast(now, float), dtype=datetime)
         return dict(x=x, y=y), None, self.max_data
 
     # noinspection PyUnusedLocal
@@ -90,5 +90,5 @@ class PipelineStatus(BaseGraphCallback):
 
         now = datetime.now()
         y = [[c.size()] for c in self._connector_list]
-        x = np.full_like(y, now, dtype=datetime)
+        x = np.full_like(y, cast(now, float), dtype=datetime)
         return dict(x=x, y=y), None, self.max_data

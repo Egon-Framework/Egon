@@ -34,7 +34,7 @@ class WrappedSource(nodes.Source):
 
     def __init__(self, func: GeneratorFunction) -> None:
         self.output = connectors.Output()
-        self._func = _as_single_arg_func(func)
+        self._func: GeneratorFunction = _as_single_arg_func(func)
         super().__init__()
 
     def action(self) -> None:

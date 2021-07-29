@@ -90,7 +90,7 @@ class MaxSize(TestCase):
     def test_queue_matches_input(self) -> None:
         """Test the max size of the underlying queue matches the max size of the Input"""
 
-        self.assertEqual(self.connector._queue._maxsize, self.connector.maxsize)
+        self.assertEqual(self.connector._queue.maxsize, self.connector.maxsize)
 
     def test_set_at_init(self) -> None:
         """Test the max queue size is set at __init__"""

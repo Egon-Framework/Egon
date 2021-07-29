@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import os
 import warnings
-from asyncio.subprocess import Process
 from copy import copy
 from inspect import getmembers
 from itertools import chain
 from typing import List, Tuple
+
+import ray
 
 from . import connectors as conn
 from . import nodes
@@ -23,7 +24,19 @@ from .visualize import Visualizer
 class Pipeline:
     """Manages a collection of nodes as a single analysis pipeline"""
 
-    def __init__(self) -> None:
+    def __init__(self, address: str = None) -> None:
+        """Base class for a data analysis pipeline constructed of multiple interconnected nodes
+
+        The pipeline will run on a single machine by default and will
+        automatically detect the available hardware resources. For instructions
+        on how to configure the available resources and/or run on a cluster
+        environment, see the official docs: https://mwvgroup.github.io/Egon/
+
+        Args:
+            address: Optionally specify the address of the ray cluster to run on
+        """
+
+        self.address = address
 
         # Store the nodes and connectors used to build the pipeline
         # so they can be exposed by public accessors
@@ -54,16 +67,6 @@ class Pipeline:
         for node in chain(*self.nodes):
             node.validate()
 
-    def _get_processes(self) -> List[Process]:
-        """Return a list of processes forked by pipeline nodes"""
-
-        # Collect all of the processes assigned to each node
-        processes = []
-        for node in chain(*self.nodes):
-            processes.extend(node._pool._processes)
-
-        return processes
-
     @property
     def nodes(self) -> Tuple[Tuple[nodes.Source], Tuple[nodes.Node], Tuple[nodes.Target]]:
         """Return a list of all nodes in the pipeline
@@ -90,13 +93,13 @@ class Pipeline:
     def num_processes(self) -> int:
         """The number of processes forked by to the pipeline"""
 
-        return len(self._get_processes())
+        return sum(node._pool.num_processes for node in chain(*self.nodes) if node._pool is not None)
 
     def kill(self) -> None:
         """Kill all running pipeline processes without trying to exit gracefully"""
 
-        for p in self._get_processes():
-            p.terminate()
+        for node in chain(*self.nodes):
+            node._pool.terminate()
 
     def run(self) -> None:
         """Start all pipeline processes and block execution until all processes exit"""
@@ -113,6 +116,7 @@ class Pipeline:
     def run_async(self) -> None:
         """Start all processes asynchronously"""
 
+        ray.init(address=self.address, ignore_reinit_error=True)
         for node in chain(*self.nodes):
             node._pool.start()
 
@@ -136,6 +140,7 @@ class Pipeline:
         from waitress import serve
 
         if not quiet:
+            # noinspection HttpUrlsUsage
             print(f'Launching server at http://{host}:{port}')
 
         # we increase the number of threads from 4 (the default) to 8 so the
